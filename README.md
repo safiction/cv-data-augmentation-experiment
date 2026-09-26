@@ -36,3 +36,24 @@ This checks whether there is an optimal amount of synthetic augmentation and whe
 ## Additional Research Question 2
 How do the quality and diversity of diffusion-generated images affect classifier performance?
 Investigate whether artifacts, low diversity, or unrealistic synthetic features cause the classifier to learn synthetic-specific shortcuts instead of useful class features.
+
+
+## Data description summary
+train: 5094
+validation: 900
+test: 5794
+Number of classes: 200
+
+## Download the data
+Run script:
+```bash
+python src/load_data.py
+```
+
+EDA is available in __notebooks/eda.ipynb__
+
+Main observations:
+- There is almost no class disbalance in the dataset, no missing images.
+- Some pictures are in a grayscale, so need to convert them to RGB during training
+- Image size is different, so need to resize or crop
+- 2 duplicate images found
