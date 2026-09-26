@@ -1,0 +1,10 @@
+datasets>=3.0
+pillow
+numpy
+pandas
+matplotlib
+scikit-learn
+torch
+torchvision
+ipykernel
+ipywidgets
