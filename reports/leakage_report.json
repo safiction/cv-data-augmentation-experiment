@@ -1,0 +1,116 @@
+{
+  "sizes": {
+    "train": 4952,
+    "val": 1000,
+    "test": 5794
+  },
+  "pairs": {
+    "train/train": [],
+    "train/val": [],
+    "train/test": [],
+    "val/val": [],
+    "val/test": [],
+    "test/test": [
+      {
+        "a": "validation/176.Prairie_Warbler/Prairie_Warbler_0091_172597",
+        "b": "validation/176.Prairie_Warbler/Prairie_Warbler_0052_173400",
+        "similarity": 0.9324
+      },
+      {
+        "a": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0010_795166",
+        "b": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0053_795187",
+        "similarity": 0.9559
+      },
+      {
+        "a": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0010_795166",
+        "b": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0061_795194",
+        "similarity": 0.943
+      },
+      {
+        "a": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0053_795187",
+        "b": "validation/124.Le_Conte_Sparrow/Le_Conte_Sparrow_0061_795194",
+        "similarity": 0.9421
+      },
+      {
+        "a": "validation/115.Brewer_Sparrow/Brewer_Sparrow_0037_107442",
+        "b": "validation/115.Brewer_Sparrow/Brewer_Sparrow_0065_107419",
+        "similarity": 0.9985
+      },
+      {
+        "a": "validation/140.Summer_Tanager/Summer_Tanager_0124_139963",
+        "b": "validation/140.Summer_Tanager/Summer_Tanager_0047_140164",
+        "similarity": 0.9988
+      },
+      {
+        "a": "validation/026.Bronzed_Cowbird/Bronzed_Cowbird_0043_796224",
+        "b": "validation/026.Bronzed_Cowbird/Bronzed_Cowbird_0087_796223",
+        "similarity": 0.9311
+      },
+      {
+        "a": "validation/160.Black_throated_Blue_Warbler/Black_Throated_Blue_Warbler_0110_161726",
+        "b": "validation/160.Black_throated_Blue_Warbler/Black_Throated_Blue_Warbler_0047_161511",
+        "similarity": 0.9308
+      },
+      {
+        "a": "validation/090.Red_breasted_Merganser/Red_Breasted_Merganser_0079_79519",
+        "b": "validation/090.Red_breasted_Merganser/Red_Breasted_Merganser_0064_79563",
+        "similarity": 0.9321
+      },
+      {
+        "a": "validation/007.Parakeet_Auklet/Parakeet_Auklet_0020_795947",
+        "b": "validation/007.Parakeet_Auklet/Parakeet_Auklet_0064_795954",
+        "similarity": 0.9429
+      },
+      {
+        "a": "validation/031.Black_billed_Cuckoo/Black_Billed_Cuckoo_0043_795324",
+        "b": "validation/031.Black_billed_Cuckoo/Black_Billed_Cuckoo_0089_795322",
+        "similarity": 0.964
+      },
+      {
+        "a": "validation/031.Black_billed_Cuckoo/Black_Billed_Cuckoo_0076_26177",
+        "b": "validation/031.Black_billed_Cuckoo/Black_Billed_Cuckoo_0051_795318",
+        "similarity": 0.9536
+      },
+      {
+        "a": "validation/014.Indigo_Bunting/Indigo_Bunting_0013_12949",
+        "b": "validation/014.Indigo_Bunting/Indigo_Bunting_0051_12837",
+        "similarity": 0.931
+      },
+      {
+        "a": "validation/086.Pacific_Loon/Pacific_Loon_0049_75780",
+        "b": "validation/086.Pacific_Loon/Pacific_Loon_0045_75589",
+        "similarity": 0.9341
+      },
+      {
+        "a": "validation/044.Frigatebird/Frigatebird_0091_43066",
+        "b": "validation/044.Frigatebird/Frigatebird_0011_43213",
+        "similarity": 0.9313
+      },
+      {
+        "a": "validation/084.Red_legged_Kittiwake/Red_Legged_Kittiwake_0042_795457",
+        "b": "validation/084.Red_legged_Kittiwake/Red_Legged_Kittiwake_0020_795439",
+        "similarity": 0.9371
+      },
+      {
+        "a": "validation/143.Caspian_Tern/Caspian_Tern_0099_145939",
+        "b": "validation/143.Caspian_Tern/Caspian_Tern_0010_145667",
+        "similarity": 0.9316
+      },
+      {
+        "a": "validation/105.Whip_poor_Will/Whip_Poor_Will_0034_796413",
+        "b": "validation/105.Whip_poor_Will/Whip_Poor_Will_0022_796438",
+        "similarity": 0.9478
+      },
+      {
+        "a": "validation/190.Red_cockaded_Woodpecker/Red_Cockaded_Woodpecker_0053_794707",
+        "b": "validation/190.Red_cockaded_Woodpecker/Red_Cockaded_Woodpecker_0057_794725",
+        "similarity": 0.9588
+      }
+    ]
+  },
+  "shared_image_ids": {
+    "train/val": 0,
+    "train/test": 0,
+    "val/test": 0
+  }
+}

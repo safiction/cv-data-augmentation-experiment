@@ -9,10 +9,11 @@
 ## 2. Dataset preparation
 
 - **Dataset:** CUB-200-2011; input: bird image; target: species label. Safina completed the dataset review and EDA.
-- **Existing split:** 5,094 train / 900 validation / 5,794 test images. Preserve the official test set; reserve 15% of official training data for stratified validation with seed 42. Stratification keeps every class represented.
-- **Limited-data subset:** sample 10 real training images per class, giving 2,000 images per run. This deliberately creates data scarcity while keeping all species. Save subset IDs; unused training images stay outside the core experiments.
-- **EDA findings:** no missing images; training classes are nearly balanced. One exact-duplicate pair occurs within one split; none span splits. Artem will document how to handle that pair and any revised counts.
-- **Preprocessing:** convert grayscale images to RGB, resize the shorter side to 256, center-crop to 224×224, and use ImageNet normalization to match the classifier's pretrained inputs. Augmented training uses random resized crops and horizontal flips instead; evaluation preprocessing stays deterministic.
+- **Split:** 4,952 train pool / 1,000 validation / 5,794 test images. Preserve the official test set; validation is 5 random images per class from the official training data (stratified, seed 42). A fixed count keeps validation balanced and leaves at least 20 training images per class for the 20-shot extension. Reasoning and noise estimates: `docs/data_split.md`.
+- **Limited-data subset:** sample 10 real training images per class, giving 2,000 images per run. This deliberately creates data scarcity while keeping all species. Subset IDs for seeds 0, 1, 2 are saved in `splits/cub_splits.csv`; subsets are nested across 5/10/20 shots. Unused training images stay outside the core experiments.
+- **EDA findings:** no missing images; training classes are nearly balanced.
+- **Duplicates and leakage:** an md5 + ResNet-18 embedding search found 30 official train images that duplicate 27 test images, and 15 duplicate pairs inside official training data (incl. the exact pair from the EDA). The train copies (42 images) were removed; the official test set is unchanged. No duplicates remain across train, validation and test.
+- **Preprocessing:** convert grayscale images to RGB, resize the shorter side to 256, center-crop to 224×224, and use ImageNet normalization to match the classifier's pretrained inputs. Augmented training uses random resized crops (50–100% of the area) and horizontal flips instead; evaluation preprocessing stays deterministic.
 
 Validation and test contain only real images, so evaluation measures performance on real data. Never use their images for generation or synthetic-image selection.
 
@@ -58,7 +59,7 @@ Select checkpoints on validation macro F1. After fixing experimental choices, ev
 | --- | --- | --- |
 | Karina | Question, ML task, hypothesis, additional research questions | Documented in README |
 | Safina | Dataset description and EDA | Complete; loading code and saved EDA results available |
-| Artem | Split, seeds, preprocessing, subset sampling, duplicate handling | Experimental setup still to finalize |
+| Artem | Split, seeds, preprocessing, subset sampling, duplicate handling | Complete; see `docs/data_split.md` |
 | Arina | Metrics and justification, experiments, implementation outline, work schedule | Documented in this plan |
 
 ### Following weeks — deadlines in 2026
@@ -75,6 +76,6 @@ Each member analyzes one test failure, writes their report section, and rehearse
 
 ## Readiness for 6 October
 
-**Safina's dataset work is complete. Artem must finalize experimental setup**, building on her EDA and the existing split code. Then combine and check the report sections. The duplicate-handling decision belongs to setup, not unfinished dataset analysis.
+**Safina's dataset work and Artem's experimental setup are complete.** Then combine and check the report sections.
 
 Working models, generation pilots, and final training parameters are later implementation tasks. The first working baseline is due on **13 October**.
