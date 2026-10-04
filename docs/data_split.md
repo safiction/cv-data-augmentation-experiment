@@ -12,7 +12,19 @@
 Every kept image and its split are in `splits/cub_splits.csv`, which is tracked in git.
 
 Experiments train on k-shot subsets of the pool, not on the whole pool: 10 images per class
-(2,000) in the core runs, 5 or 20 in the extensions. A subset is defined by a seed: `rank_seed{s} < k`.
+(2,000) in the core runs, 5 or 20 in the extensions. A subset is defined by a seed: `rank_seed{s} < k`
+in `cub_splits.csv`.
+
+Each run reads its images from a **manifest** in `splits/manifests/` (`image_id, label, class_name`):
+
+| Manifest | Images |
+| --- | --- |
+| `train_{5,10,20}shot_seed{0,1,2}.csv` | 1,000 / 2,000 / 4,000 |
+| `train.csv` (whole pool), `val.csv`, `test.csv` | 4,952 / 1,000 / 5,794 |
+
+A run is fully described by its manifest name, and the generation pipeline uses the same files
+to know which real images each seed covers. `python src/make_manifests.py` rebuilds them from
+`cub_splits.csv` in seconds.
 
 | Seed | Used for |
 | --- | --- |
@@ -106,14 +118,14 @@ shared image ids (`reports/leakage_report.json`).
 
 ## Preprocessing
 
-Offline (`src/make_splits.py`, `src/load_data.py`): restore labels and the official split from the
-HF keys, remove duplicates, assign splits.
+Offline (`src/make_splits.py`, `src/make_manifests.py`, `src/load_data.py`): restore labels and the
+official split from the HF keys, remove duplicates, assign splits, write manifests.
 
 Online (`src/preprocessing.py`):
 
 | Step | Eval / no-aug training | Augmented training |
 | --- | --- | --- |
-| Color | convert to RGB (8 images are grayscale) | same |
+| Color | convert to RGB (8 images are grayscale: 4 in train, 4 in test) | same |
 | Geometry | resize shorter side to 256, center crop 224 | random resized crop 224, area 50–100% |
 | Flip | — | horizontal, p = 0.5 |
 | Normalize | ImageNet mean/std | same |
@@ -122,14 +134,22 @@ The crop area starts at 50% instead of torchvision's 8%: small crops often cut t
 which turns a fine-grained sample into a mislabeled background patch.
 
 ```python
-from torch.utils.data import DataLoader
-from preprocessing import get_dataset
+from preprocessing import get_loader  # run from src/
 
-train = get_dataset("train", k_shot=10, seed=0, augment=True)
-val = get_dataset("val")
-loader = DataLoader(train, batch_size=64, shuffle=True, num_workers=4)
-batch = next(iter(loader))  # {"pixel_values": (64, 3, 224, 224), "label": (64,)}
+train = get_loader("train", k_shot=10, seed=0, augment=True, batch_size=64)
+val = get_loader("val")
+test = get_loader("test")
+batch = next(iter(train))  # {"pixel_values": (64, 3, 224, 224), "label": (64,)}
 ```
+
+Loaders:
+
+- **train** shuffles with a generator seeded by `seed`. Arms with the same seed get the same images
+  in the same batch order (with or without augmentation), so arm comparisons are paired.
+  With `num_workers > 0` the random crops and flips are reproducible too; with `num_workers=0`,
+  call `torch.manual_seed(seed)` before training.
+- **val/test** are not shuffled and use the deterministic transform.
+- `get_dataset(...)` returns the same data without the loader, e.g. for a custom sampler.
 
 ## Reproducing
 
@@ -137,6 +157,7 @@ batch = next(iter(loader))  # {"pixel_values": (64, 3, 224, 224), "label": (64,)
 python src/load_data.py    # download, apply splits/cub_splits.csv, save to data/processed
 python src/leakage.py      # verify: no duplicates across splits
 python src/make_splits.py  # only to regenerate the CSVs (~7 min on CPU, computes embeddings)
+python src/make_manifests.py  # rebuild splits/manifests from cub_splits.csv
 python src/val_size_analysis.py  # val-size table above
 ```
 

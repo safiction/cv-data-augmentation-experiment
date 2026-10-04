@@ -14,6 +14,7 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed" / "cub_200_2011"
 SPLITS_DIR = PROJECT_ROOT / "splits"
 SPLITS_CSV = SPLITS_DIR / "cub_splits.csv"
 DROPPED_CSV = SPLITS_DIR / "dropped_duplicates.csv"
+MANIFESTS_DIR = SPLITS_DIR / "manifests"
 
 HF_DATASET = "birder-project/CUB_200_2011"
 SUBSET_SEEDS = (0, 1, 2)
@@ -45,6 +46,22 @@ def load_raw():
 def load_splits():
     """Split table: image_id, label, class_name, split, rank_seed{s} (train only, else -1)."""
     return pd.read_csv(SPLITS_CSV)
+
+
+def manifest_path(split, k_shot=None, seed=None):
+    """splits/manifests/{split}.csv, or train_{k}shot_seed{s}.csv for a k-shot subset."""
+    if k_shot is None:
+        return MANIFESTS_DIR / f"{split}.csv"
+    return MANIFESTS_DIR / f"{split}_{k_shot}shot_seed{seed}.csv"
+
+
+def load_manifest(split, k_shot=None, seed=None):
+    """Images of one split or k-shot subset: image_id, label, class_name (see make_manifests.py)."""
+    path = manifest_path(split, k_shot, seed)
+    if not path.exists():
+        available = sorted(p.name for p in MANIFESTS_DIR.glob("*.csv"))
+        raise FileNotFoundError(f"{path.name} not found; available: {available}")
+    return pd.read_csv(path)
 
 
 def download_and_save():

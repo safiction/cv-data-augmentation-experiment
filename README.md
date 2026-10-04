@@ -57,11 +57,11 @@ python src/load_data.py   # downloads and applies splits/cub_splits.csv
 python src/leakage.py     # optional: verify there are no duplicates across splits
 ```
 
-Load a split for training (from `src/`):
+Data loaders (from `src/`); images per run are listed in `splits/manifests/`:
 ```python
-from preprocessing import get_dataset
-train = get_dataset("train", k_shot=10, seed=0, augment=True)  # 2,000 images
-val, test = get_dataset("val"), get_dataset("test")
+from preprocessing import get_loader
+train = get_loader("train", k_shot=10, seed=0, augment=True)  # 2,000 images, train_10shot_seed0.csv
+val, test = get_loader("val"), get_loader("test")
 ```
 
 EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)

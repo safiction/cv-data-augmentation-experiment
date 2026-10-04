@@ -11,6 +11,7 @@
    The k-shot subset of seed s is `rank_seed{s} < k`: subsets are nested (5-shot inside 10-shot)
    and the experiment arms that share a seed train on identical real images.
 
+After changing the split, rebuild the per-run manifests with src/make_manifests.py.
 The reasoning behind the numbers is in docs/data_split.md.
 """
 import numpy as np
