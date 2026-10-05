@@ -39,21 +39,35 @@ Investigate whether artifacts, low diversity, or unrealistic synthetic features 
 
 
 ## Data description summary
-train: 5094
-validation: 900
-test: 5794
-Number of classes: 200
+Dataset: CUB-200-2011, 200 bird species, 11,788 images.
+
+| Split | Images | Per class |
+| --- | --- | --- |
+| train (pool for k-shot subsets) | 4,952 | 20–25 |
+| validation | 1,000 | 5 |
+| test (official CUB test) | 5,794 | 11–30 |
+
+42 duplicate training images were removed, 30 of them copies of test images.
+Split reasoning, leakage check and preprocessing: [docs/data_split.md](docs/data_split.md).
 
 ## Download the data
 Run script:
 ```bash
-python src/load_data.py
+python src/load_data.py   # downloads and applies splits/cub_splits.csv
+python src/leakage.py     # optional: verify there are no duplicates across splits
 ```
 
-EDA is available in __notebooks/eda.ipynb__
+Data loaders (from `src/`); images per run are listed in `splits/manifests/`:
+```python
+from preprocessing import get_loader
+train = get_loader("train", k_shot=10, seed=0, augment=True)  # 2,000 images, train_10shot_seed0.csv
+val, test = get_loader("val"), get_loader("test")
+```
+
+EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)
 
 Main observations:
 - There is almost no class disbalance in the dataset, no missing images.
 - Some pictures are in a grayscale, so need to convert them to RGB during training
 - Image size is different, so need to resize or crop
-- 2 duplicate images found
+- 2 duplicate images found by md5; an embedding search found 64 duplicate pairs in total (see docs/data_split.md)
