@@ -8,3 +8,6 @@ torch
 torchvision
 ipykernel
 ipywidgets
+diffusers
+transformers
+accelerate

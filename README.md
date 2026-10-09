@@ -64,6 +64,16 @@ train = get_loader("train", k_shot=10, seed=0, augment=True)  # 2,000 images, tr
 val, test = get_loader("val"), get_loader("test")
 ```
 
+## Generate synthetic data
+Stable Diffusion 1.5, text-to-image from species names; needs a CUDA GPU (8 GB is enough):
+```bash
+python src/generate.py --pilot                   # 10 species x 5 images, data/synthetic/pilot_photo
+python src/review_synthetic.py --pool pilot_photo   # contact sheets, review table, val/test leakage check
+python src/generate.py --per-class 10            # full pool: 2,000 images, data/synthetic/sd15_photo
+```
+Each pool gets a manifest `splits/manifests/synthetic_{pool}.csv` (`image_id, label, class_name` + prompt, seed, time).
+Settings, seeds, review and acceptance rules: [docs/generation.md](docs/generation.md).
+
 EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)
 
 Main observations:
