@@ -139,7 +139,8 @@ Images with the right species are `ok` + `artifact`, out of 25 per group:
 | matches with val/test | 0 | 0 |
 | median time per image (RTX 3070, fp16) | 2.16 s | 2.18 s |
 
-- **Cost:** ~2.2 s per image on an RTX 3070, ~72 min for 2,000 images.
+- **Cost:** ~2.2 s per image on an RTX 3070, ~72 min estimated for 2,000 images. The full pool
+  `sd15_wildlife` took 97 min (median 2.9 s per image).
 - **Fidelity:** hard species were not worse than distinctive ones; Painted Bunting had the most
   wrong-species images (2 of 5 with both templates). California Gull with `photo` had no `ok` image.
 - **Template:** `wildlife`, with half the wrong-species images of `photo`. The full pool is `sd15_wildlife`.
