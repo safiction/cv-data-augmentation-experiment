@@ -65,13 +65,16 @@ val, test = get_loader("val"), get_loader("test")
 ```
 
 ## Generate synthetic data
-Stable Diffusion 1.5, text-to-image from species names; needs a CUDA GPU (8 GB is enough):
+Stable Diffusion 1.5, text-to-image from species names; needs a CUDA GPU (8 GB is enough) and the CUDA build of torch
+(on Windows plain `pip install torch` is CPU-only):
 ```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 python src/generate.py --pilot                   # 10 species x 5 images, data/synthetic/pilot_photo
 python src/review_synthetic.py --pool pilot_photo   # contact sheets, review table, val/test leakage check
-python src/generate.py --per-class 10            # full pool: 2,000 images, data/synthetic/sd15_photo
+python src/generate.py --template wildlife --per-class 10   # full pool: 2,000 images, data/synthetic/sd15_wildlife
 ```
 Each pool gets a manifest `splits/manifests/synthetic_{pool}.csv` (`image_id, label, class_name` + prompt, seed, time).
+Images are shared as a zip on Drive (unzip into `data/synthetic/`, then `python src/check_synthetic.py --pool sd15_wildlife`).
 Settings, seeds, review and acceptance rules: [docs/generation.md](docs/generation.md).
 
 EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)

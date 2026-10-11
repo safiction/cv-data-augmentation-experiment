@@ -1,0 +1,8 @@
+{
+  "pool": "pilot_wildlife",
+  "images": 50,
+  "pairs": {
+    "val": [],
+    "test": []
+  }
+}

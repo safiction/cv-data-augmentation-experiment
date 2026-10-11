@@ -12,12 +12,17 @@ Leakage: SD 1.5 was trained on web images and may reproduce CUB photos. Every sy
 compared with val and test using the detectors of leakage.py (md5 and ResNet-18 embedding
 similarity >= DUP_MIN_SIM, labels ignored); a match must be dropped from the pool.
 
+Training manifest (--select N, after the review is filled in): the first N ACCEPTED images of each
+species by index, so images dropped in review are replaced by the next seeds.
+
 Usage: python src/review_synthetic.py --pool pilot_photo
+       python src/review_synthetic.py --pool sd15_photo --select 10 --no-leakage
   (needs data/processed from load_data.py)
 Output:
   data/synthetic/{pool}/sheets/{class_name}.jpg   contact sheets (shared with the pool via Drive)
   reports/generation/review_{pool}.csv            decision table (in git)
   reports/generation/leakage_{pool}.json          synthetic images matching val/test (in git)
+  splits/manifests/synthetic_{pool}_accepted.csv  accepted images, with --select (in git)
 """
 import argparse
 import hashlib
@@ -29,11 +34,12 @@ from PIL import Image, ImageDraw, ImageOps
 
 from generate import SYNTHETIC_DIR, synthetic_path
 from leakage import duplicate_pairs, embeddings, image_features
-from load_data import PROCESSED_DATA_DIR, PROJECT_ROOT, load_manifest
+from load_data import PROCESSED_DATA_DIR, PROJECT_ROOT, load_manifest, manifest_path
 from prompts import species_name
 
 REPORTS_DIR = PROJECT_ROOT / "reports" / "generation"
 DECISIONS = ("ok", "wrong_species", "artifact", "not_a_bird", "leak")
+ACCEPTED = ("ok", "artifact")  # right species; see the acceptance rules in docs/generation.md
 THUMB = 192
 PER_ROW = 5
 CAPTION = 18  # pixels of text above each thumbnail
@@ -119,6 +125,17 @@ def check_leakage(pool, pool_df):
     return report, path
 
 
+def write_accepted(pool, pool_df, table, per_class):
+    """splits/manifests/synthetic_{pool}_accepted.csv: the first per_class accepted images of each species."""
+    ok = set(table.loc[table["decision"].isin(ACCEPTED), "image_id"])
+    accepted = pool_df[pool_df["image_id"].isin(ok)].sort_values("image_id").groupby("class_name").head(per_class)
+    counts = accepted["class_name"].value_counts()
+    short = {c: int(counts.get(c, 0)) for c in sorted(pool_df["class_name"].unique()) if counts.get(c, 0) < per_class}
+    path = manifest_path(f"synthetic_{pool}_accepted")
+    accepted.to_csv(path, index=False)
+    return accepted, short, path
+
+
 def summarize(table):
     """Share of each decision per species, for the reviewed images only."""
     reviewed = table[table["decision"] != ""]
@@ -131,6 +148,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--pool", required=True, help="e.g. pilot_photo (see splits/manifests/synthetic_*.csv)")
     parser.add_argument("--no-leakage", action="store_true", help="skip the val/test duplicate check")
+    parser.add_argument("--select", type=int, metavar="N", help="write the manifest of the first N accepted images per species")
     args = parser.parse_args()
 
     pool_df = load_pool(args.pool)
@@ -143,3 +161,8 @@ if __name__ == "__main__":
         report, path = check_leakage(args.pool, pool_df)
         print("Matches with val/test:", {s: len(p) for s, p in report["pairs"].items()},
               "->", path.relative_to(PROJECT_ROOT))
+    if args.select:
+        accepted, short, path = write_accepted(args.pool, pool_df, table, args.select)
+        print(f"Accepted: {len(accepted)} images -> {path.relative_to(PROJECT_ROOT)}")
+        if short:
+            print(f"Species with fewer than {args.select} accepted images: {short}")

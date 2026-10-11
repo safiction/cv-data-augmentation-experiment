@@ -28,6 +28,7 @@ Usage (on a CUDA GPU; 8 GB is enough):
   python src/generate.py --per-class 10                # full pool: 200 species x 10 = 2,000 images
 """
 import argparse
+import hashlib
 import platform
 import time
 
@@ -56,7 +57,7 @@ PILOT_CLASSES = [
 PILOT_PER_CLASS = 5
 
 # Settings that must stay the same inside one pool; a resumed run with others is refused.
-POOL_SETTINGS = ["template", "model", "steps", "guidance"]
+POOL_SETTINGS = ["template", "model", "steps", "guidance", "dtype"]
 
 
 def seed_for(label, index):
@@ -72,12 +73,11 @@ def synthetic_path(image_id):
     return DATA_DIR / f"{image_id}.jpg"
 
 
-def load_pipeline(model_id=MODEL_ID):
+def load_pipeline(model_id, device, dtype):
     """SD 1.5 in fp16 on the GPU (~3.5 GB of memory), DPM-Solver++ scheduler, no safety checker."""
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     pipe = StableDiffusionPipeline.from_pretrained(
         model_id,
-        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        torch_dtype=getattr(torch, dtype),
         safety_checker=None,
         requires_safety_checker=False,
     )
@@ -91,19 +91,28 @@ def device_name():
 
 
 def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODEL_ID,
-             steps=STEPS, guidance=GUIDANCE):
+             steps=STEPS, guidance=GUIDANCE, allow_cpu=False):
     """Generate the missing images of a pool and append their rows to its metadata.csv."""
     labels = dict(load_splits()[["class_name", "label"]].drop_duplicates().to_numpy())
+    unknown = set(class_names) - set(labels)
+    if unknown:
+        raise ValueError(f"unknown classes {sorted(unknown)}")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cpu" and not allow_cpu:
+        raise SystemExit(f"CUDA is not available to torch {torch.__version__}; install the CUDA build "
+                         "(see README) or pass --allow-cpu (~2 min per image)")
+    dtype = "float16" if device == "cuda" else "float32"
     meta_path = SYNTHETIC_DIR / pool / "metadata.csv"
-    settings = {"template": template, "model": model_id, "steps": steps, "guidance": guidance}
+    settings = {"template": template, "model": model_id, "steps": steps, "guidance": guidance, "dtype": dtype}
 
     done = set()
     if meta_path.exists():
         meta = pd.read_csv(meta_path)
         for key in POOL_SETTINGS:
-            if set(meta[key]) != {settings[key]}:
-                raise ValueError(f"pool {pool} was generated with {key}={sorted(set(meta[key]))}, "
-                                 f"not {settings[key]}; use another --pool")
+            old = sorted(set(meta[key])) if key in meta else "unknown"
+            if old != [settings[key]]:
+                raise ValueError(f"pool {pool} was generated with {key}={old}, "
+                                 f"not {settings[key]}; use another --pool or delete the pool")
         done = {i for i in meta["image_id"] if synthetic_path(i).exists()}
 
     todo = [(labels[c], c, k) for c in class_names for k in range(per_class)
@@ -112,7 +121,7 @@ def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODE
     if not todo:
         return
 
-    pipe = load_pipeline(model_id)
+    pipe = load_pipeline(model_id, device, dtype)
     gpu = device_name()
     for start in range(0, len(todo), batch_size):
         batch = todo[start:start + batch_size]
@@ -142,6 +151,7 @@ def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODE
                 "prompt": prompt, "negative_prompt": NEGATIVE_PROMPT, "seed": seed, **settings,
                 "scheduler": type(pipe.scheduler).__name__, "size": SIZE, "batch_size": batch_size,
                 "gen_time_s": round(seconds, 3), "device": gpu,
+                "md5": hashlib.md5(path.read_bytes()).hexdigest(),
             })
         pd.DataFrame(rows).to_csv(meta_path, mode="a", header=not meta_path.exists(), index=False)
         print(f"  {start + len(batch)}/{len(todo)}  {seconds:.2f} s/image")
@@ -170,23 +180,26 @@ def parse_args():
     parser.add_argument("--pilot", action="store_true", help=f"{len(PILOT_CLASSES)} pilot species only")
     parser.add_argument("--per-class", type=int, help=f"images per species (default {PILOT_PER_CLASS} "
                                                       "for --pilot, else 10)")
+    parser.add_argument("--classes", nargs="+", help="only these classes, e.g. 017.Cardinal; "
+                                                     "to replace rejected images with the next seeds")
     parser.add_argument("--template", default="photo", choices=sorted(TEMPLATES))
     parser.add_argument("--pool", help="output name (default pilot_{template} or sd15_{template})")
     parser.add_argument("--batch-size", type=int, default=1, help="images per forward pass; 1 fits any 6 GB GPU")
     parser.add_argument("--steps", type=int, default=STEPS)
     parser.add_argument("--guidance", type=float, default=GUIDANCE)
     parser.add_argument("--model", default=MODEL_ID)
+    parser.add_argument("--allow-cpu", action="store_true", help="run without CUDA (fp32, very slow)")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    class_names = PILOT_CLASSES if args.pilot else sorted(load_splits()["class_name"].unique())
+    class_names = args.classes or (PILOT_CLASSES if args.pilot else sorted(load_splits()["class_name"].unique()))
     per_class = args.per_class or (PILOT_PER_CLASS if args.pilot else 10)
     pool = args.pool or f"{'pilot' if args.pilot else 'sd15'}_{args.template}"
 
     generate(pool, class_names, per_class, args.template, args.batch_size, args.model,
-             args.steps, args.guidance)
+             args.steps, args.guidance, args.allow_cpu)
     meta, path = write_manifest(pool)
     report_cost(meta)
     print("Manifest:", path.relative_to(path.parents[2]))

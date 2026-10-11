@@ -1,0 +1,51 @@
+image_id,class_name,species,decision,note
+synthetic/pilot_wildlife/016.Painted_Bunting/Painted_Bunting_0000,016.Painted_Bunting,Painted Bunting,ok,
+synthetic/pilot_wildlife/016.Painted_Bunting/Painted_Bunting_0001,016.Painted_Bunting,Painted Bunting,ok,
+synthetic/pilot_wildlife/016.Painted_Bunting/Painted_Bunting_0002,016.Painted_Bunting,Painted Bunting,wrong_species,
+synthetic/pilot_wildlife/016.Painted_Bunting/Painted_Bunting_0003,016.Painted_Bunting,Painted Bunting,ok,
+synthetic/pilot_wildlife/016.Painted_Bunting/Painted_Bunting_0004,016.Painted_Bunting,Painted Bunting,wrong_species,
+synthetic/pilot_wildlife/017.Cardinal/Cardinal_0000,017.Cardinal,Northern Cardinal,ok,
+synthetic/pilot_wildlife/017.Cardinal/Cardinal_0001,017.Cardinal,Northern Cardinal,ok,
+synthetic/pilot_wildlife/017.Cardinal/Cardinal_0002,017.Cardinal,Northern Cardinal,ok,
+synthetic/pilot_wildlife/017.Cardinal/Cardinal_0003,017.Cardinal,Northern Cardinal,ok,
+synthetic/pilot_wildlife/017.Cardinal/Cardinal_0004,017.Cardinal,Northern Cardinal,ok,
+synthetic/pilot_wildlife/037.Acadian_Flycatcher/Acadian_Flycatcher_0000,037.Acadian_Flycatcher,Acadian Flycatcher,ok,
+synthetic/pilot_wildlife/037.Acadian_Flycatcher/Acadian_Flycatcher_0001,037.Acadian_Flycatcher,Acadian Flycatcher,ok,
+synthetic/pilot_wildlife/037.Acadian_Flycatcher/Acadian_Flycatcher_0002,037.Acadian_Flycatcher,Acadian Flycatcher,ok,
+synthetic/pilot_wildlife/037.Acadian_Flycatcher/Acadian_Flycatcher_0003,037.Acadian_Flycatcher,Acadian Flycatcher,ok,
+synthetic/pilot_wildlife/037.Acadian_Flycatcher/Acadian_Flycatcher_0004,037.Acadian_Flycatcher,Acadian Flycatcher,artifact,
+synthetic/pilot_wildlife/059.California_Gull/California_Gull_0000,059.California_Gull,California Gull,ok,
+synthetic/pilot_wildlife/059.California_Gull/California_Gull_0001,059.California_Gull,California Gull,ok,
+synthetic/pilot_wildlife/059.California_Gull/California_Gull_0002,059.California_Gull,California Gull,artifact,missing leg
+synthetic/pilot_wildlife/059.California_Gull/California_Gull_0003,059.California_Gull,California Gull,artifact,missing leg
+synthetic/pilot_wildlife/059.California_Gull/California_Gull_0004,059.California_Gull,California Gull,artifact,missing leg
+synthetic/pilot_wildlife/062.Herring_Gull/Herring_Gull_0000,062.Herring_Gull,Herring Gull,artifact,
+synthetic/pilot_wildlife/062.Herring_Gull/Herring_Gull_0001,062.Herring_Gull,Herring Gull,ok,
+synthetic/pilot_wildlife/062.Herring_Gull/Herring_Gull_0002,062.Herring_Gull,Herring Gull,artifact,cropped bird
+synthetic/pilot_wildlife/062.Herring_Gull/Herring_Gull_0003,062.Herring_Gull,Herring Gull,ok,
+synthetic/pilot_wildlife/062.Herring_Gull/Herring_Gull_0004,062.Herring_Gull,Herring Gull,ok,
+synthetic/pilot_wildlife/073.Blue_Jay/Blue_Jay_0000,073.Blue_Jay,Blue Jay,ok,
+synthetic/pilot_wildlife/073.Blue_Jay/Blue_Jay_0001,073.Blue_Jay,Blue Jay,artifact,extra foot
+synthetic/pilot_wildlife/073.Blue_Jay/Blue_Jay_0002,073.Blue_Jay,Blue Jay,ok,
+synthetic/pilot_wildlife/073.Blue_Jay/Blue_Jay_0003,073.Blue_Jay,Blue Jay,ok,
+synthetic/pilot_wildlife/073.Blue_Jay/Blue_Jay_0004,073.Blue_Jay,Blue Jay,ok,
+synthetic/pilot_wildlife/100.Brown_Pelican/Brown_Pelican_0000,100.Brown_Pelican,Brown Pelican,ok,
+synthetic/pilot_wildlife/100.Brown_Pelican/Brown_Pelican_0001,100.Brown_Pelican,Brown Pelican,ok,
+synthetic/pilot_wildlife/100.Brown_Pelican/Brown_Pelican_0002,100.Brown_Pelican,Brown Pelican,artifact,chopped
+synthetic/pilot_wildlife/100.Brown_Pelican/Brown_Pelican_0003,100.Brown_Pelican,Brown Pelican,artifact,extra head
+synthetic/pilot_wildlife/100.Brown_Pelican/Brown_Pelican_0004,100.Brown_Pelican,Brown Pelican,ok,
+synthetic/pilot_wildlife/116.Chipping_Sparrow/Chipping_Sparrow_0000,116.Chipping_Sparrow,Chipping Sparrow,ok,
+synthetic/pilot_wildlife/116.Chipping_Sparrow/Chipping_Sparrow_0001,116.Chipping_Sparrow,Chipping Sparrow,ok,
+synthetic/pilot_wildlife/116.Chipping_Sparrow/Chipping_Sparrow_0002,116.Chipping_Sparrow,Chipping Sparrow,ok,
+synthetic/pilot_wildlife/116.Chipping_Sparrow/Chipping_Sparrow_0003,116.Chipping_Sparrow,Chipping Sparrow,ok,
+synthetic/pilot_wildlife/116.Chipping_Sparrow/Chipping_Sparrow_0004,116.Chipping_Sparrow,Chipping Sparrow,ok,
+synthetic/pilot_wildlife/172.Nashville_Warbler/Nashville_Warbler_0000,172.Nashville_Warbler,Nashville Warbler,ok,
+synthetic/pilot_wildlife/172.Nashville_Warbler/Nashville_Warbler_0001,172.Nashville_Warbler,Nashville Warbler,artifact,cropped
+synthetic/pilot_wildlife/172.Nashville_Warbler/Nashville_Warbler_0002,172.Nashville_Warbler,Nashville Warbler,ok,
+synthetic/pilot_wildlife/172.Nashville_Warbler/Nashville_Warbler_0003,172.Nashville_Warbler,Nashville Warbler,ok,
+synthetic/pilot_wildlife/172.Nashville_Warbler/Nashville_Warbler_0004,172.Nashville_Warbler,Nashville Warbler,wrong_species,
+synthetic/pilot_wildlife/188.Pileated_Woodpecker/Pileated_Woodpecker_0000,188.Pileated_Woodpecker,Pileated Woodpecker,ok,
+synthetic/pilot_wildlife/188.Pileated_Woodpecker/Pileated_Woodpecker_0001,188.Pileated_Woodpecker,Pileated Woodpecker,artifact,
+synthetic/pilot_wildlife/188.Pileated_Woodpecker/Pileated_Woodpecker_0002,188.Pileated_Woodpecker,Pileated Woodpecker,ok,
+synthetic/pilot_wildlife/188.Pileated_Woodpecker/Pileated_Woodpecker_0003,188.Pileated_Woodpecker,Pileated Woodpecker,ok,
+synthetic/pilot_wildlife/188.Pileated_Woodpecker/Pileated_Woodpecker_0004,188.Pileated_Woodpecker,Pileated Woodpecker,ok,

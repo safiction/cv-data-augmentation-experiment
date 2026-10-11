@@ -18,7 +18,7 @@
 `src/prompts.py` turns the class name into the common English name a web caption would contain:
 `009.Brewer_Blackbird` → *Brewer's Blackbird*, `110.Geococcyx` → *Greater Roadrunner*,
 `141.Artic_Tern` → *Arctic Tern*. Generic rule: a lowercase word joins the previous one with a
-hyphen (`Black_and_white_Warbler` → *Black-and-white Warbler*); 26 names that the rule gets
+hyphen (`Black_and_white_Warbler` → *Black-and-white Warbler*); 29 names that the rule gets
 wrong are listed in `NAME_OVERRIDES`. `python src/prompts.py` prints all 200 prompts.
 
 | Template | Prompt |
@@ -50,7 +50,8 @@ subsets and initialization, not differences between generated pools.
 | `data/synthetic/{pool}/{class_name}/*.jpg` | images | no (shared via Drive) |
 | `data/synthetic/{pool}/metadata.csv` | one row per image, written while generating | no |
 | `data/synthetic/{pool}/sheets/*.jpg` | contact sheets for review | no (shared via Drive) |
-| `splits/manifests/synthetic_{pool}.csv` | manifest: `image_id, label, class_name` + prompt, seed, settings, `gen_time_s`, `device` | yes |
+| `splits/manifests/synthetic_{pool}.csv` | manifest: `image_id, label, class_name` + prompt, seed, settings, `gen_time_s`, `device`, `md5` | yes |
+| `splits/manifests/synthetic_{pool}_accepted.csv` | training pool: first 10 accepted images per species (`--select 10`) | yes |
 | `reports/generation/review_{pool}.csv` | review decisions | yes |
 | `reports/generation/leakage_{pool}.json` | synthetic images matching val/test | yes |
 
@@ -63,9 +64,11 @@ Pool names: `pilot_{template}` for the pilot, `sd15_{template}` for the full poo
 
 ## Running
 
-On a machine with a CUDA GPU:
+On a machine with a CUDA GPU. On Windows, `pip install torch` gives a CPU-only build; install the
+CUDA build first (`generate.py` stops if CUDA is not available, `--allow-cpu` overrides):
 
 ```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 pip install -r requirements.txt
 python src/generate.py --pilot                      # 10 species x 5 images -> pilot_photo
 python src/generate.py --pilot --template wildlife  # same seeds -> pilot_wildlife
@@ -76,16 +79,34 @@ python src/review_synthetic.py --pool pilot_wildlife
 
 The first run downloads the model (~4 GB) into the Hugging Face cache. Generation resumes: if it
 stops, re-run the same command and finished images are skipped. A run with a different template,
-model, steps or guidance into an existing pool is refused, so one pool never mixes settings.
+model, steps, guidance or dtype into an existing pool is refused, so one pool never mixes settings.
 
 Full pool, after the acceptance rules below are final:
 
 ```bash
-python src/generate.py --template photo --per-class 10   # 2,000 images -> sd15_photo
-python src/review_synthetic.py --pool sd15_photo
+python src/generate.py --template wildlife --per-class 10   # 2,000 images -> sd15_wildlife
+python src/review_synthetic.py --pool sd15_wildlife
 ```
 
 `--batch-size 4` is faster on an 8 GB card; the images stay the same up to fp16 noise.
+
+After the review, the training manifest takes the first 10 accepted images of each species:
+
+```bash
+python src/review_synthetic.py --pool sd15_wildlife --select 10 --no-leakage   # lists species with < 10
+python src/generate.py --template wildlife --per-class 15 --classes 059.California_Gull  # next seeds for them
+python src/review_synthetic.py --pool sd15_wildlife            # sheets + leakage for the new images; review them
+python src/review_synthetic.py --pool sd15_wildlife --select 10 --no-leakage
+```
+
+### Sharing the pool
+
+Images are not in git. Zip `data/synthetic/{pool}` and upload it to the shared Drive; teammates
+unzip it into `data/synthetic/` and check it against the manifest in git:
+
+```bash
+python src/check_synthetic.py --pool sd15_wildlife
+```
 
 ## Pilot
 
@@ -106,7 +127,23 @@ Questions the pilot answers:
 3. **Template:** which template gives more correct and more varied images.
 4. **Leakage:** whether SD reproduces val/test photos.
 
-Results: _to fill in after the pilot run._
+### Results
+
+Images with the right species are `ok` + `artifact`, out of 25 per group:
+
+| | photo | wildlife |
+| --- | --- | --- |
+| `ok` / `artifact` / `wrong_species` | 34 / 10 / 6 | 36 / 11 / 3 |
+| right species, distinctive | 21 | 23 |
+| right species, hard | 23 | 24 |
+| matches with val/test | 0 | 0 |
+| median time per image (RTX 3070, fp16) | 2.16 s | 2.18 s |
+
+- **Cost:** ~2.2 s per image on an RTX 3070, ~72 min for 2,000 images.
+- **Fidelity:** hard species were not worse than distinctive ones; Painted Bunting had the most
+  wrong-species images (2 of 5 with both templates). California Gull with `photo` had no `ok` image.
+- **Template:** `wildlife`, with half the wrong-species images of `photo`. The full pool is `sd15_wildlife`.
+- **Leakage:** no synthetic image matches a val/test photo.
 
 ## Review
 
@@ -125,11 +162,15 @@ numbered `#k`. Reviewers fill the `decision` column of `reports/generation/revie
 Compare against the real row and the species' field marks, not against general bird realism: a
 realistic bird of the wrong species is the main risk for training.
 
-### Acceptance rules (draft, to finalize after the pilot)
+### Acceptance rules
 
-- An image enters the training pool only with decision `ok`. `leak` is always dropped.
+Agreed by the team after the pilot.
+
+- An image enters the training pool with decision `ok` or `artifact`: the label is right, and
+  defects are a quality question for the filtered vs. unfiltered extension. `wrong_species`,
+  `not_a_bird` and `leak` are dropped.
 - Dropped images are replaced by the next seeds of the same species (`--per-class` higher), so
   every species keeps exactly 10 synthetic images and the 1:1 ratio holds.
-- A species with fewer than 3 of 5 `ok` images in the pilot gets a closer look in the full
-  pool; if SD cannot draw it, it gets no synthetic images, and this is reported.
+- If SD cannot draw a species (fewer than 10 accepted images out of 20 seeds), it gets no synthetic
+  images, and this is reported.
 - The unfiltered pool is kept: filtered vs. unfiltered is a planned optional extension.
