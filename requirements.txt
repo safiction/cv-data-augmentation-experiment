@@ -11,3 +11,4 @@ ipywidgets
 diffusers
 transformers
 accelerate
+pytest

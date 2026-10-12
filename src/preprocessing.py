@@ -57,6 +57,7 @@ class ApplyTransform:
         return {
             "pixel_values": [self.transform(to_rgb(img)) for img in batch["image"]],
             "label": batch["label"],
+            "image_id": batch["image_id"],  # to save predictions per image
         }
 
 
@@ -82,7 +83,8 @@ def get_dataset(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False):
 
 
 def get_loader(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False, batch_size=64, num_workers=2):
-    """DataLoader over `get_dataset(...)`; batches are {"pixel_values": (B, 3, 224, 224), "label": (B,)}.
+    """DataLoader over `get_dataset(...)`; batches are {"pixel_values": (B, 3, 224, 224), "label": (B,),
+    "image_id": list of B str}.
 
     Train loaders shuffle with a generator seeded by `seed`, so the batch order is reproducible and
     paired across arms. DataLoader also derives each worker's torch seed from that generator, which

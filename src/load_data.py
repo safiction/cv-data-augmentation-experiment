@@ -18,6 +18,7 @@ MANIFESTS_DIR = SPLITS_DIR / "manifests"
 
 HF_DATASET = "birder-project/CUB_200_2011"
 SUBSET_SEEDS = (0, 1, 2)
+NUM_CLASSES = 200
 
 
 def parse_key(key):
@@ -46,6 +47,13 @@ def load_raw():
 def load_splits():
     """Split table: image_id, label, class_name, split, rank_seed{s} (train only, else -1)."""
     return pd.read_csv(SPLITS_CSV)
+
+
+def class_names():
+    """Class folder names indexed by label: class_names()[0] == "001.Black_footed_Albatross"."""
+    pairs = load_splits()[["label", "class_name"]].drop_duplicates().sort_values("label")
+    assert pairs["label"].tolist() == list(range(NUM_CLASSES)), "labels are not 0..NUM_CLASSES-1"
+    return pairs["class_name"].tolist()
 
 
 def manifest_path(split, k_shot=None, seed=None):
