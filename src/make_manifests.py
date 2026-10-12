@@ -11,10 +11,10 @@ from load_data import MANIFESTS_DIR, SUBSET_SEEDS, load_splits, manifest_path
 SHOTS = (5, 10, 20)  # core experiment uses 10; 5 and 20 are the planned extensions
 
 
-def write_manifests():
+def build_manifests():
+    """{manifest path: DataFrame} for every eval split and k-shot subset, sorted by image_id."""
     splits = load_splits()
     n_classes = splits["label"].nunique()
-    MANIFESTS_DIR.mkdir(parents=True, exist_ok=True)
     columns = ["image_id", "label", "class_name"]
 
     written = {}
@@ -26,10 +26,15 @@ def write_manifests():
             subset = splits.loc[(splits["split"] == "train") & (ranks < k), columns]
             assert (subset["label"].value_counts() == k).all() and subset["label"].nunique() == n_classes
             written[manifest_path("train", k, seed)] = subset
+    return {path: df.sort_values("image_id", ignore_index=True) for path, df in written.items()}
 
-    for path, df in written.items():
-        df.sort_values("image_id").to_csv(path, index=False)
-    return written
+
+def write_manifests():
+    manifests = build_manifests()
+    MANIFESTS_DIR.mkdir(parents=True, exist_ok=True)
+    for path, df in manifests.items():
+        df.to_csv(path, index=False)
+    return manifests
 
 
 if __name__ == "__main__":

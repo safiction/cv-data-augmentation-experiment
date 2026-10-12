@@ -133,14 +133,23 @@ Online (`src/preprocessing.py`):
 The crop area starts at 50% instead of torchvision's 8%: small crops often cut the bird out,
 which turns a fine-grained sample into a mislabeled background patch.
 
+`python src/preview_transforms.py` saves `reports/figures/transforms_preview.jpg`: original,
+eval view and four augmented views of six training images. Birds stay in the frame, but for long
+birds in wide photos (pelican, sparrow tail) the center crop trims the ends of the bird, and an
+occasional 50% crop cuts off the head. This is accepted for the core runs (the standard-augmentation
+arm is meant to be the usual recipe); a larger minimum area is a possible extension.
+
 ```python
 from preprocessing import get_loader  # run from src/
 
 train = get_loader("train", k_shot=10, seed=0, augment=True, batch_size=64)
 val = get_loader("val")
 test = get_loader("test")
-batch = next(iter(train))  # {"pixel_values": (64, 3, 224, 224), "label": (64,)}
+batch = next(iter(train))  # {"pixel_values": (64, 3, 224, 224), "label": (64,), "image_id": [64 str]}
 ```
+
+`image_id` lets predictions be saved per image. `load_data.class_names()[label]` gives the class
+folder name, `load_data.NUM_CLASSES == 200`.
 
 Loaders:
 
@@ -159,7 +168,14 @@ python src/leakage.py      # verify: no duplicates across splits
 python src/make_splits.py  # only to regenerate the CSVs (~7 min on CPU, computes embeddings)
 python src/make_manifests.py  # rebuild splits/manifests from cub_splits.csv
 python src/val_size_analysis.py  # val-size table above
+python src/preview_transforms.py # transforms preview figure
+python -m pytest tests           # checks below (~15 s)
 ```
+
+`tests/` checks that the manifests in git match `cub_splits.csv`, that splits are disjoint and
+balanced, that k-shot subsets are nested and differ across seeds, and that the loaders keep the
+guarantees above: reproducible augmentation, identical batch order across arms with the same seed,
+unshuffled val/test in manifest order. Loader tests are skipped when the images are not downloaded.
 
 `make_splits.py` is deterministic given the embeddings, but borderline similarities can differ
 slightly across hardware; that is why the CSVs, not the script, define the split.

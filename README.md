@@ -62,7 +62,10 @@ Data loaders (from `src/`); images per run are listed in `splits/manifests/`:
 from preprocessing import get_loader
 train = get_loader("train", k_shot=10, seed=0, augment=True)  # 2,000 images, train_10shot_seed0.csv
 val, test = get_loader("val"), get_loader("test")
+# batches: {"pixel_values": (B, 3, 224, 224), "label": (B,), "image_id": [B str]}
 ```
+Class names by label: `load_data.class_names()`. Checks: `python -m pytest tests`.
+Transforms preview: `python src/preview_transforms.py` → `reports/figures/transforms_preview.jpg`.
 
 EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)
 
