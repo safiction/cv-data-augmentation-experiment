@@ -2,10 +2,15 @@
 
 Needs only the CSVs in git, no download.
 """
+import hashlib
+
 import pandas as pd
 import pytest
 
-from load_data import DROPPED_CSV, NUM_CLASSES, SUBSET_SEEDS, class_names, load_manifest, load_splits
+from load_data import (
+    DROPPED_CSV, NUM_CLASSES, SUBSET_SEEDS, canonical_sha256, class_names, load_manifest,
+    load_splits, sha256_matches,
+)
 from make_manifests import SHOTS, build_manifests
 
 
@@ -17,6 +22,16 @@ def splits():
 def test_manifests_in_git_match_splits_csv():
     for path, expected in build_manifests().items():
         pd.testing.assert_frame_equal(pd.read_csv(path), expected, obj=path.name)
+
+
+def test_text_hashes_ignore_line_endings(tmp_path):
+    lf = tmp_path / "lf.csv"
+    crlf = tmp_path / "crlf.csv"
+    lf.write_bytes(b"a,b\n1,2\n")
+    crlf.write_bytes(b"a,b\r\n1,2\r\n")
+    assert canonical_sha256(lf) == canonical_sha256(crlf)
+    assert sha256_matches(lf, canonical_sha256(crlf))
+    assert sha256_matches(lf, hashlib.sha256(crlf.read_bytes()).hexdigest())
 
 
 def test_split_sizes(splits):
