@@ -53,11 +53,11 @@ Safina implemented the Stable Diffusion 1.5 generation and review pipeline. A 50
 - Duplicate detection found leakage between the original train and test partitions; removing the 42 affected training images resolved it without changing the official test set.
 - Validation macro F1 peaks at step 700 and falls to 0.5162 by step 1,000 while training loss continues to decrease, indicating overfitting after the selected checkpoint.
 - Frequent errors occur between visually similar species, including Yellow-bellied versus Least Flycatcher and Ring-billed versus Herring Gull.
-- Raw manifest hashes initially depended on line endings, so an unchanged CSV could be rejected across Windows and Linux. Hashing now normalizes line endings, and new checkpoints record train, validation, and test manifest hashes. The evaluator remains compatible with the existing baseline checkpoint and verifies its test manifest through the saved split definition.
+- During evaluation, we found that manifest hashes differed between Windows and Linux because of line endings. This is fixed: hashes are now platform-independent, all manifests are verified, and the existing baseline checkpoint remains supported. The fix affects only integrity checks, so baseline retraining is not required.
 - The baseline was trained before `image_id` was added to loader batches. The pixel transforms are identical in the current version, so this metadata-only change does not affect model inputs or results.
 
 ## Repository
 
 [GitHub repository](https://github.com/safiction/cv-data-augmentation-experiment)
 
-Implementation details are available in [`docs/data_split.md`](docs/data_split.md). The seed-0 evaluation artifacts are in [`reports/classifier/baseline_seed0/`](reports/classifier/baseline_seed0/), and the checkpoint is [`models/week1.pt`](models/week1.pt).
+Implementation details are available in [`data_split.md`](data_split.md). The seed-0 evaluation artifacts are in [`reports/classifier/baseline_seed0/`](../reports/classifier/baseline_seed0/), and the checkpoint is [`models/week1.pt`](../models/week1.pt).
