@@ -82,6 +82,52 @@ Settings, seeds, review and acceptance rules: [docs/generation.md](docs/generati
 
 EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)
 
+## Train the classifier
+
+The classifier is ImageNet-pretrained ResNet-18 with a frozen backbone and frozen BatchNorm
+statistics. Only a new 512-to-200 linear head is trained. The default real-only baseline uses
+`train_10shot_seed0.csv` (2,000 real images), deterministic preprocessing, and all 1,000 validation
+images. Training selects the best checkpoint by validation macro F1 and never evaluates test.
+
+From the project root, using the environment containing `requirements.txt` dependencies:
+
+```bash
+python src/train_classifier.py --seed 0
+python src/train_classifier.py --seed 0 --device cuda --amp --output outputs/baseline_gpu_seed0
+```
+
+The default device is CUDA when available, otherwise CPU. `--device cuda` requires a CUDA-enabled
+PyTorch installation. AMP is optional and requires CUDA. The first training run downloads ImageNet
+weights if they are not cached. Data must already be saved with `python src/load_data.py`.
+
+Defaults are a starting configuration for validation pilots: AdamW, learning rate `0.001`, weight
+decay `0.0001`, batch size `64`, `1,000` optimizer steps, validation every `100` steps. These values
+are configurable; freeze the chosen settings and step budget across experimental arms.
+Use `--max-steps 2 --eval-every 2 --output outputs/pilot` for a short pipeline check (validation
+still uses the complete split). `--num-workers 0` is the portable default for Windows and notebooks.
+
+For standard augmentation, start a new run with `--augment`; use the same seed and other settings.
+For the three paired subsets, repeat with `--seed 0`, `--seed 1`, and `--seed 2`. The optional
+`--k-shot 5` and `--k-shot 20` settings use the corresponding existing manifests.
+
+Each run creates a new output directory containing `config.json` (parameters, software/hardware,
+class mapping, source and manifest hashes), `history.csv`, `best.pt`, `runtime.json`, validation
+metrics, per-class precision/recall/F1, and predictions associated with image IDs. Existing output
+directories are rejected to preserve previous results. The runtime measures the training loop,
+periodic validation and checkpoint writes, excluding setup and final evaluation. Checkpoints
+support inference; exact interrupted-training resume is not implemented.
+
+Evaluate a saved checkpoint without downloading weights again:
+
+```bash
+python src/evaluate_classifier.py outputs/baseline_10shot_seed0/best.pt --output outputs/val_review
+# Run test only after all experimental settings and checkpoint choices are fixed.
+python src/evaluate_classifier.py outputs/baseline_10shot_seed0/best.pt --split test --output outputs/final_test_seed0
+```
+
+The diffusion arm needs a mixed real/synthetic loader and is a later extension. Regression checks
+run offline with `python -m unittest discover -s tests -v`; they do not require ImageNet downloads.
+
 Main observations:
 - There is almost no class disbalance in the dataset, no missing images.
 - Some pictures are in a grayscale, so need to convert them to RGB during training
