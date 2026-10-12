@@ -3,6 +3,7 @@
 The split is read from splits/cub_splits.csv (tracked in git, created by src/make_splits.py), so
 every machine gets identical splits without recomputing the duplicate search.
 """
+import hashlib
 from pathlib import Path
 
 import pandas as pd
@@ -19,6 +20,20 @@ MANIFESTS_DIR = SPLITS_DIR / "manifests"
 HF_DATASET = "birder-project/CUB_200_2011"
 SUBSET_SEEDS = (0, 1, 2)
 NUM_CLASSES = 200
+
+
+def canonical_sha256(path):
+    """Hash text reproducibly across Windows CRLF and Unix LF checkouts."""
+    data = Path(path).read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_matches(path, expected):
+    """Accept canonical hashes and raw hashes from older LF or CRLF checkpoints."""
+    data = Path(path).read_bytes()
+    lf = data.replace(b"\r\n", b"\n")
+    candidates = (data, lf, lf.replace(b"\n", b"\r\n"))
+    return any(hashlib.sha256(value).hexdigest() == expected for value in candidates)
 
 
 def parse_key(key):

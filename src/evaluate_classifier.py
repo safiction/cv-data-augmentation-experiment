@@ -7,7 +7,9 @@ from classifier import (
     class_names_from_manifest, evaluate, load_checkpoint, resolve_device,
     save_evaluation, save_json,
 )
-from load_data import load_manifest, manifest_path
+from load_data import (
+    SPLITS_CSV, canonical_sha256, load_manifest, load_splits, manifest_path, sha256_matches,
+)
 from preprocessing import get_loader
 
 
@@ -30,12 +32,25 @@ def main(argv=None):
     names = checkpoint["config"]["class_names"]
     if class_names_from_manifest(manifest) != names:
         raise ValueError("Evaluation class mapping differs from the checkpoint")
-    # Validation selection must remain reproducible against the saved manifest.
+    # New checkpoints store every manifest hash. For the existing week-one checkpoint, test is
+    # verified through its saved cub_splits.csv hash and the manifest derived from that table.
     path = manifest_path(args.split)
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    digest = canonical_sha256(path)
     expected = checkpoint["config"].get("sha256", {}).get(f"splits/manifests/{args.split}.csv")
-    if expected is not None and digest != expected:
-        raise ValueError("Evaluation manifest has changed since training")
+    if expected is not None:
+        if not sha256_matches(path, expected):
+            raise ValueError("Evaluation manifest has changed since training")
+    elif args.split == "test":
+        split_hash = checkpoint["config"].get("sha256", {}).get("splits/cub_splits.csv")
+        if split_hash is None or not sha256_matches(SPLITS_CSV, split_hash):
+            raise ValueError("Cannot verify the test split against this checkpoint")
+        columns = ["image_id", "label", "class_name"]
+        derived = (load_splits().loc[lambda table: table["split"] == "test", columns]
+                   .sort_values("image_id", ignore_index=True))
+        if not manifest[columns].equals(derived):
+            raise ValueError("Test manifest does not match the saved split definition")
+    else:
+        raise ValueError("Checkpoint does not contain a validation-manifest hash")
     loader = get_loader(args.split, batch_size=args.batch_size, num_workers=args.num_workers)
     print(f"Evaluating {args.split}: {len(loader.dataset)} images on {device}", flush=True)
     result = evaluate(model, loader, device)

@@ -1,7 +1,6 @@
 """Train the CUB real-only baseline or standard augmentation arm; never evaluate test."""
 import argparse
 import csv
-import hashlib
 import math
 import platform
 import time
@@ -16,7 +15,9 @@ from classifier import (
     BirdClassifier, class_names_from_manifest, evaluate, load_checkpoint,
     resolve_device, save_evaluation, save_json, seed_everything,
 )
-from load_data import PROJECT_ROOT, SPLITS_CSV, SUBSET_SEEDS, load_manifest, manifest_path
+from load_data import (
+    PROJECT_ROOT, SPLITS_CSV, SUBSET_SEEDS, canonical_sha256, load_manifest, manifest_path,
+)
 from preprocessing import get_loader
 
 
@@ -158,10 +159,12 @@ def main(argv=None):
         sklearn=str(sklearn.__version__),
         gpu=torch.cuda.get_device_name(device) if device.type == "cuda" else None,
     )
-    sources = [manifest_path("train", args.k_shot, args.seed), manifest_path("val"), SPLITS_CSV,
-               Path(__file__), PROJECT_ROOT / "src" / "classifier.py",
-               PROJECT_ROOT / "src" / "preprocessing.py"]
-    config["sha256"] = {path.relative_to(PROJECT_ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+    sources = [
+        manifest_path("train", args.k_shot, args.seed), manifest_path("val"), manifest_path("test"),
+        SPLITS_CSV, Path(__file__), PROJECT_ROOT / "src" / "classifier.py",
+        PROJECT_ROOT / "src" / "preprocessing.py",
+    ]
+    config["sha256"] = {path.relative_to(PROJECT_ROOT).as_posix(): canonical_sha256(path)
                         for path in sources}
     output.mkdir(parents=True, exist_ok=False)
     save_json(output / "config.json", config)
