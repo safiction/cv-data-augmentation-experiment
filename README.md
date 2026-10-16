@@ -110,6 +110,17 @@ Use the same seed and other settings.
 For the three paired subsets, repeat with `--seed 0`, `--seed 1`, and `--seed 2`. The optional
 `--k-shot 5` and `--k-shot 20` settings use the corresponding existing manifests.
 
+To train on all 4,952 real images in the training split, use `--all-train` instead of
+`--k-shot`. This reads `splits/manifests/train.csv`, keeps validation/test held out, and
+retains the default resize/center-crop preprocessing and 1,000-step training budget:
+
+```bash
+python src/train_classifier.py --all-train --seed 0 --device cuda --amp
+```
+
+The default output directory is `outputs/baseline_all_train_seed0`. Its configuration
+records `k_shot: null` and the full training-manifest hash.
+
 Each run creates a new output directory containing `config.json` (parameters, software/hardware,
 class mapping, source and manifest hashes), `history.csv`, `best.pt`, `runtime.json`, validation
 metrics, per-class precision/recall/F1, and predictions associated with image IDs. Existing output

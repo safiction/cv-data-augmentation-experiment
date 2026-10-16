@@ -24,7 +24,10 @@ from synthetic_data import load_synthetic_manifest
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, choices=SUBSET_SEEDS, default=0)
-    parser.add_argument("--k-shot", type=int, choices=(5, 10, 20), default=10)
+    subset = parser.add_mutually_exclusive_group()
+    subset.add_argument("--k-shot", type=int, choices=(5, 10, 20), default=10)
+    subset.add_argument("--all-train", dest="k_shot", action="store_const", const=None,
+                        help="Use every image in the training split instead of a k-shot subset")
     parser.add_argument("--augment", action="store_true",
                         help="Append one fixed crop/flip version per real image (double dataset size)")
     parser.add_argument("--synthetic-manifest", type=Path,
@@ -136,7 +139,8 @@ def main(argv=None):
         raise ValueError("--amp requires a CUDA device")
     arm = "real_synthetic" if args.synthetic_manifest else (
         "standard_aug" if args.augment else "baseline_full_image" if args.full_image else "baseline")
-    output = args.output or PROJECT_ROOT / "outputs" / f"{arm}_{args.k_shot}shot_seed{args.seed}"
+    subset_name = "all_train" if args.k_shot is None else f"{args.k_shot}shot"
+    output = args.output or PROJECT_ROOT / "outputs" / f"{arm}_{subset_name}_seed{args.seed}"
     if output.exists():
         raise FileExistsError(f"Output already exists: {output}. Choose a new --output directory.")
     seed_everything(args.seed)
@@ -145,7 +149,7 @@ def main(argv=None):
     names = class_names_from_manifest(train_manifest)
     if class_names_from_manifest(val_manifest) != names:
         raise ValueError("Train and validation class mappings differ")
-    if not (train_manifest.groupby("label").size() == args.k_shot).all():
+    if args.k_shot is not None and not (train_manifest.groupby("label").size() == args.k_shot).all():
         raise ValueError("Train manifest does not contain k images per class")
     if set(train_manifest["image_id"]) & set(val_manifest["image_id"]):
         raise ValueError("Training and validation images overlap")
