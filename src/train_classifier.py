@@ -1,4 +1,4 @@
-"""Train the CUB real-only baseline or standard augmentation arm; never evaluate test."""
+"""Train real-only, standard augmentation or mixed real/synthetic CUB arms; evaluate validation."""
 import argparse
 import csv
 import hashlib
@@ -18,13 +18,19 @@ from classifier import (
 )
 from load_data import PROJECT_ROOT, SPLITS_CSV, SUBSET_SEEDS, load_manifest, manifest_path
 from preprocessing import get_loader
+from synthetic_data import load_synthetic_manifest
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, choices=SUBSET_SEEDS, default=0)
     parser.add_argument("--k-shot", type=int, choices=(5, 10, 20), default=10)
-    parser.add_argument("--augment", action="store_true", help="Use random crops and flips")
+    parser.add_argument("--augment", action="store_true",
+                        help="Append one fixed crop/flip version per real image (double dataset size)")
+    parser.add_argument("--synthetic-manifest", type=Path,
+                        help="Prepared synthetic CSV to append to real training images")
+    parser.add_argument("--full-image", action="store_true",
+                        help="Real-only control: resize the whole training image to 224 square")
     parser.add_argument("--max-steps", type=int, default=1000)
     parser.add_argument("--eval-every", type=int, default=100)
     parser.add_argument("--log-every", type=int, default=10)
@@ -36,6 +42,10 @@ def parse_args(argv=None):
     parser.add_argument("--amp", action="store_true", help="Enable mixed precision on CUDA")
     parser.add_argument("--output", type=Path, help="New output directory; must not already exist")
     args = parser.parse_args(argv)
+    if args.augment and args.synthetic_manifest is not None:
+        parser.error("--augment cannot be combined with --synthetic-manifest; real + synthetic uses no random crops/flips")
+    if args.full_image and (args.augment or args.synthetic_manifest is not None):
+        parser.error("--full-image selects the real-only control; omit --augment and --synthetic-manifest")
     for name in ("max_steps", "eval_every", "log_every", "batch_size"):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
@@ -124,7 +134,8 @@ def main(argv=None):
     device = resolve_device(args.device)
     if args.amp and device.type != "cuda":
         raise ValueError("--amp requires a CUDA device")
-    arm = "standard_aug" if args.augment else "baseline"
+    arm = "real_synthetic" if args.synthetic_manifest else (
+        "standard_aug" if args.augment else "baseline_full_image" if args.full_image else "baseline")
     output = args.output or PROJECT_ROOT / "outputs" / f"{arm}_{args.k_shot}shot_seed{args.seed}"
     if output.exists():
         raise FileExistsError(f"Output already exists: {output}. Choose a new --output directory.")
@@ -138,9 +149,16 @@ def main(argv=None):
         raise ValueError("Train manifest does not contain k images per class")
     if set(train_manifest["image_id"]) & set(val_manifest["image_id"]):
         raise ValueError("Training and validation images overlap")
+    synthetic = (load_synthetic_manifest(args.synthetic_manifest, names)
+                 if args.synthetic_manifest else None)
+    if synthetic is not None:
+        held_out_ids = set(val_manifest["image_id"]) | set(load_manifest("test")["image_id"])
+        if set(synthetic["image_id"]) & (held_out_ids | set(train_manifest["image_id"])):
+            raise ValueError("Synthetic IDs overlap real data")
     train_loader = get_loader(
         "train", k_shot=args.k_shot, seed=args.seed, augment=args.augment,
-        batch_size=args.batch_size, num_workers=args.num_workers)
+        batch_size=args.batch_size, num_workers=args.num_workers,
+        synthetic_manifest=args.synthetic_manifest, full_image=args.full_image)
     val_loader = get_loader("val", batch_size=args.batch_size, num_workers=args.num_workers)
     print(f"Device: {device}; train: {len(train_loader.dataset)}; val: {len(val_loader.dataset)}",
           flush=True)
@@ -152,7 +170,14 @@ def main(argv=None):
         output=str(output.resolve()), device=str(device), arm=arm,
         architecture="resnet18", weights="IMAGENET1K_V1", class_names=names,
         frozen_backbone=True, frozen_batchnorm=True, selection_metric="val_macro_f1",
-        train_images=len(train_manifest), val_images=len(val_manifest),
+        train_images=len(train_loader.dataset), real_train_images=len(train_manifest),
+        augmented_train_images=len(train_manifest) if args.augment else 0,
+        augmentation_policy="one_fixed_view_per_real_image" if args.augment else None,
+        synthetic_train_images=0 if synthetic is None else len(synthetic),
+        train_preprocessing=("full_image_resize_224" if args.full_image else
+                             "center_crop_originals_plus_fixed_crop_flip" if args.augment else
+                             "resize_center_crop"),
+        val_images=len(val_manifest),
         python=platform.python_version(), platform=platform.platform(),
         torch=str(torch.__version__), torchvision=str(torchvision.__version__),
         sklearn=str(sklearn.__version__),
@@ -160,8 +185,16 @@ def main(argv=None):
     )
     sources = [manifest_path("train", args.k_shot, args.seed), manifest_path("val"), SPLITS_CSV,
                Path(__file__), PROJECT_ROOT / "src" / "classifier.py",
-               PROJECT_ROOT / "src" / "preprocessing.py"]
-    config["sha256"] = {path.relative_to(PROJECT_ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+               PROJECT_ROOT / "src" / "preprocessing.py", PROJECT_ROOT / "src" / "synthetic_data.py"]
+    if synthetic is not None:
+        sources += [args.synthetic_manifest.resolve(), PROJECT_ROOT / "src" / "prepare_synthetic.py"]
+        leakage_report = args.synthetic_manifest.resolve().with_name("leakage_report.json")
+        if leakage_report.exists():
+            sources.append(leakage_report)
+        config["synthetic_manifest"] = str(args.synthetic_manifest.resolve())
+        config["synthetic_per_class"] = {str(k): int(v) for k, v in synthetic.groupby("label").size().items()}
+    config["sha256"] = {(path.relative_to(PROJECT_ROOT).as_posix() if path.is_relative_to(PROJECT_ROOT)
+                        else str(path)): hashlib.sha256(path.read_bytes()).hexdigest()
                         for path in sources}
     output.mkdir(parents=True, exist_ok=False)
     save_json(output / "config.json", config)

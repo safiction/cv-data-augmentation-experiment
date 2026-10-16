@@ -18,7 +18,7 @@
   - Save train/validation split IDs and random state; use `train_test_split(..., stratify=labels, test_size=0.15, random_state=42)` or equivalent.
 - **Limited-data subset:** from the training fold, sample 10 real training images per class (2,000 images total) to simulate scarcity. Save subset IDs; unused training images and all validation/test images stay outside core experiments. Use the same limited subset across all three approaches (real-only, standard augmentation, diffusion augmentation) to ensure fair comparison.
 - **EDA findings:** no missing images; training classes are nearly balanced. One exact-duplicate pair occurs within one split; none span splits. Artem will document how to handle that pair and any revised counts.
-- **Preprocessing:** convert grayscale images to RGB, resize the shorter side to 256, center-crop to 224×224, and use ImageNet normalization to match the classifier's pretrained inputs. Augmented training uses random resized crops and horizontal flips instead; evaluation preprocessing stays deterministic.
+- **Preprocessing:** convert grayscale images to RGB and use ImageNet normalization to match the classifier's pretrained inputs. Baseline, evaluation, both comparison arms' real originals and generated images resize the shorter side to 256 (preserving aspect ratio) and center-crop to 224×224. Standard augmentation adds one fixed random resized crop/flip view per original. Real + synthetic uses no random crops/flips. Both comparison arms have 4,000 entries and share original-image preprocessing; the full-image real-only control is retained as a historical diagnostic.
 
 Validation and test contain only real images, so evaluation measures performance on real data. Never use their images for generation or synthetic-image selection.
 
@@ -31,10 +31,15 @@ Validation and test contain only real images, so evaluation measures performance
 | Approach | Training data | Purpose |
 | --- | --- | --- |
 | Real-only baseline | 2,000 real images | Reference performance |
-| Standard augmentation | Same real images + random crops/flips | Tests whether ordinary augmentation already helps |
-| Diffusion augmentation | Standard augmentation + 2,000 synthetic images, 10 per class | Tests added value at a simple 1:1 synthetic-to-real ratio |
+| Real + standard augmentation | 2,000 real originals + 2,000 fixed crop/flip versions, one per real image | Tests ordinary augmentation in a 4,000-entry dataset |
+| Real + synthetic | Same 2,000 real images + 2,000 synthetic images, 10 per class; both sources use resize-to-256 and center-crop-to-224, with no random crops/flips | Compares generated data at a 1:1 synthetic-to-real ratio |
 
 **Budget:** three approaches × three paired seeds = **9 classifier runs**, plus setup/pilots. Pair real subsets and classifier initialization across approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reuse one synthetic pool, so seed variability does not measure variability between generated pools.
+
+**Preprocessing control:** an additional real-only run uses the same 2,000-image subset with
+direct full-image resizing to 224 x 224 for training and no added images. All training settings
+and validation preprocessing match the existing runs. This diagnoses the resize-versus-center-crop
+change separately from the core three-arm comparison; run with `--full-image`.
 
 | Evaluation measure | Reason |
 | --- | --- |
