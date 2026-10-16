@@ -9,15 +9,10 @@
 ## 2. Dataset preparation
 
 - **Dataset:** CUB-200-2011; input: bird image; target: species label. Safina completed the dataset review and EDA.
-- **Official split:** CUB-200-2011 provides a predefined split: 5,094 training / 5,794 test images. Never modify the test set.
-- **Train/validation/test split:**
-  - **Test:** preserve all 5,794 official test images (unchanged).
-  - **Validation:** stratified sample 15% of official training data (≈764 images) using seed 42 to ensure every species is represented.
-  - **Training:** remaining 85% of official training data (≈4,330 images).
-  - Stratification by species ensures each class has ≈3–4 validation examples, matching the class-balanced distribution in the training set.
-  - Save train/validation split IDs and random state; use `train_test_split(..., stratify=labels, test_size=0.15, random_state=42)` or equivalent.
-- **Limited-data subset:** from the training fold, sample 10 real training images per class (2,000 images total) to simulate scarcity. Save subset IDs; unused training images and all validation/test images stay outside core experiments. Use the same limited subset across all three approaches (real-only, standard augmentation, diffusion augmentation) to ensure fair comparison.
-- **EDA findings:** no missing images; training classes are nearly balanced. One exact-duplicate pair occurs within one split; none span splits. Artem will document how to handle that pair and any revised counts.
+- **Split:** 4,952 train-pool / 1,000 validation / 5,794 test images. The test set is the official CUB test split and remains unchanged. Validation contains exactly five random images per class from the official training split (stratified, seed 42). This keeps validation balanced and leaves at least 20 training images per class for the 20-shot extension. Full reasoning: `docs/data_split.md`.
+- **Limited-data subset:** sample 10 real train-pool images per class, giving 2,000 images per run. Manifests for seeds 0, 1, and 2 define the paired subsets used by all three approaches. Unused train-pool images remain outside the core experiments.
+- **EDA findings:** no missing images; training classes are nearly balanced.
+- **Duplicates and leakage:** 42 duplicate training images were removed, including train copies of test images. No duplicates remain across train, validation, and test; the official test set was not modified.
 - **Preprocessing:** convert grayscale images to RGB and use ImageNet normalization to match the classifier's pretrained inputs. Baseline, evaluation, both comparison arms' real originals and generated images resize the shorter side to 256 (preserving aspect ratio) and center-crop to 224×224. Standard augmentation adds one fixed random resized crop/flip view per original. Real + synthetic uses no random crops/flips. Both comparison arms have 4,000 entries and share original-image preprocessing; the full-image real-only control is retained as a historical diagnostic.
 
 Validation and test contain only real images, so evaluation measures performance on real data. Never use their images for generation or synthetic-image selection.
@@ -83,9 +78,3 @@ Select checkpoints on validation macro F1. After fixing experimental choices, ev
 | **10 Nov** | Classifier section/slides; demo | Data section/slides; README/environment | Generation section/slides; assemble presentation | Evaluation section/slides; edit two-page summary |
 
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed runs count toward the nine-run total. Review active workload weekly; assign optional experiments only if capacity remains.
-
-## Readiness for 6 October
-
-**Safina's dataset work and Artem's experimental setup are complete.** Then combine and check the report sections.
-
-Working models, generation pilots, and final training parameters are later implementation tasks. The first working baseline is due on **13 October**.

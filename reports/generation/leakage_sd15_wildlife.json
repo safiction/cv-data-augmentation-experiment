@@ -1,0 +1,8 @@
+{
+  "pool": "sd15_wildlife",
+  "images": 2000,
+  "pairs": {
+    "val": [],
+    "test": []
+  }
+}

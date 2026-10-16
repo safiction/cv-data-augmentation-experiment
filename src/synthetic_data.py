@@ -52,4 +52,4 @@ class SyntheticImages(Dataset):
         row = self.rows[index]
         with Image.open(row["path"]) as image:
             pixels = self.transform(image.convert("RGB"))
-        return {"pixel_values": pixels, "label": int(row["label"])}
+        return {"pixel_values": pixels, "label": int(row["label"]), "image_id": row["image_id"]}

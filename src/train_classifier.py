@@ -1,7 +1,6 @@
 """Train real-only, standard augmentation or mixed real/synthetic CUB arms; evaluate validation."""
 import argparse
 import csv
-import hashlib
 import math
 import platform
 import time
@@ -16,7 +15,9 @@ from classifier import (
     BirdClassifier, class_names_from_manifest, evaluate, load_checkpoint,
     resolve_device, save_evaluation, save_json, seed_everything,
 )
-from load_data import PROJECT_ROOT, SPLITS_CSV, SUBSET_SEEDS, load_manifest, manifest_path
+from load_data import (
+    PROJECT_ROOT, SPLITS_CSV, SUBSET_SEEDS, canonical_sha256, load_manifest, manifest_path,
+)
 from preprocessing import get_loader
 from synthetic_data import load_synthetic_manifest
 
@@ -187,7 +188,7 @@ def main(argv=None):
         sklearn=str(sklearn.__version__),
         gpu=torch.cuda.get_device_name(device) if device.type == "cuda" else None,
     )
-    sources = [manifest_path("train", args.k_shot, args.seed), manifest_path("val"), SPLITS_CSV,
+    sources = [manifest_path("train", args.k_shot, args.seed), manifest_path("val"), manifest_path("test"), SPLITS_CSV,
                Path(__file__), PROJECT_ROOT / "src" / "classifier.py",
                PROJECT_ROOT / "src" / "preprocessing.py", PROJECT_ROOT / "src" / "synthetic_data.py"]
     if synthetic is not None:
@@ -198,7 +199,7 @@ def main(argv=None):
         config["synthetic_manifest"] = str(args.synthetic_manifest.resolve())
         config["synthetic_per_class"] = {str(k): int(v) for k, v in synthetic.groupby("label").size().items()}
     config["sha256"] = {(path.relative_to(PROJECT_ROOT).as_posix() if path.is_relative_to(PROJECT_ROOT)
-                        else str(path)): hashlib.sha256(path.read_bytes()).hexdigest()
+                        else str(path)): canonical_sha256(path)
                         for path in sources}
     output.mkdir(parents=True, exist_ok=False)
     save_json(output / "config.json", config)
