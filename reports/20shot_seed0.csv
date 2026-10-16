@@ -1,0 +1,5 @@
+arm,run,seed,k_shot,real_images,augmented_real_images,synthetic_images,total_training_entries,train_preprocessing,val_macro_f1_pct,val_accuracy_pct,delta_macro_f1_vs_real_10shot_pp,best_step,training_with_validation_seconds
+"Real-only, 10-shot",outputs/baseline_10shot_seed0,0,10,2000,0,0,2000,resize_center_crop,53.14625097125097,53.300000000000004,0.0,700,444.5858348000329
+Real + standard augmentation,outputs/standard_aug_10shot_seed0,0,10,2000,2000,0,4000,center_crop_originals_plus_fixed_crop_flip,53.537202078966786,53.7,0.3909511077158143,900,1453.0393455000012
+"Real + synthetic, center crop",outputs/real_synthetic_10shot_seed0,0,10,2000,0,2000,4000,resize_center_crop,48.15799779855507,48.9,-4.988253172695899,900,531.6804487000045
+"Real-only, 20-shot",outputs/baseline_20shot_seed0,0,20,4000,0,0,4000,resize_center_crop,60.05583442465762,59.8,6.909583453406647,1000,461.90175109999836
