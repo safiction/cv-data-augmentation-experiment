@@ -36,10 +36,9 @@ from generate import SYNTHETIC_DIR, synthetic_path
 from leakage import duplicate_pairs, embeddings, image_features
 from load_data import PROCESSED_DATA_DIR, PROJECT_ROOT, load_manifest, manifest_path
 from prompts import species_name
+from synthetic_data import ACCEPTED, DECISIONS
 
 REPORTS_DIR = PROJECT_ROOT / "reports" / "generation"
-DECISIONS = ("ok", "wrong_species", "artifact", "not_a_bird", "leak")
-ACCEPTED = ("ok", "artifact")  # right species; see the acceptance rules in docs/generation.md
 THUMB = 192
 PER_ROW = 5
 CAPTION = 18  # pixels of text above each thumbnail

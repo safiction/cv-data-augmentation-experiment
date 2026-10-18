@@ -174,18 +174,27 @@ The `sheets/` directory contains contact sheets and is excluded from training.
 # Standard augmentation: 2,000 originals + 2,000 fixed crop/flip versions = 4,000 entries.
 python src/train_classifier.py --seed 0 --augment --device cuda --amp
 
-# Validate labels, image decoding and generation MD5s; check val/test duplicates.
-python src/prepare_synthetic.py --device cuda
+# Validate labels, image decoding and generation MD5s; keep reviewed ok/artifact images;
+# drop val/test duplicates; take the first 10 per species.
+python src/prepare_synthetic.py --device cuda --review reports/generation/review_sd15_wildlife.csv --per-class 10
 
 # Real + synthetic: 2,000 real plus 2,000 generated images, both resize + center crop.
 python src/train_classifier.py --seed 0 --device cuda --amp --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
+
+# Diffusion augmentation (plan arm): real + synthetic, plus one fixed crop/flip version of each = 8,000 entries.
+python src/train_classifier.py --seed 0 --device cuda --amp --augment --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
 ```
 
 Preparation writes a manifest with image SHA-256 hashes and `leakage_report.json` to a new
 `prepared/` directory. It checks MD5 equality and ResNet-18 embedding cosine similarity at the
 project's 0.93 threshold against real validation and test images, ignoring class labels. Matches
-are excluded and accepted counts are reported; this uses no classifier test metrics. Manual
-species-fidelity/quality review is separate and is not performed by the script.
+are excluded and accepted counts are reported; this uses no classifier test metrics. With
+`--review`, only images with decision `ok` or `artifact` in the manual review table are kept
+(every pool image must be reviewed). After leakage filtering the first `--per-class` images of
+each species by image ID are selected, so rejected images are replaced by later seeds; species with
+fewer accepted images get none and are listed under `quality_review.species_without_synthetic` in
+`leakage_report.json` (see the acceptance rules in `docs/generation.md`). Without `--review` the
+pool must have exactly `--expected-per-class` images per species and no review is applied.
 
 Both comparison loaders shuffle a combined dataset of 4,000 entries. Approximately half are
 original real views and half are augmented or synthetic views. Keep the optimizer-step budget fixed across
@@ -195,13 +204,14 @@ tensor conversion and ImageNet normalization. The baseline, both arms' original 
 synthetic images and validation/test now share this deterministic preprocessing. The standard
 arm's additional 2,000 views retain their fixed random crops/flips. Compare both arms against
 the center-crop real-only baseline. The full-image control is a historical diagnostic reference.
-`--augment` cannot
-be combined with `--synthetic-manifest`. Validation/test remain real-only. Images are read lazily,
+With `--augment --synthetic-manifest` (the plan's diffusion augmentation arm) synthetic images
+also get one fixed crop/flip version each, so the arm is the standard augmentation arm plus
+synthetic images. Validation/test remain real-only. Images are read lazily,
 and their hashes are verified before training. The run config records the synthetic manifest hash,
 total/original/augmented/synthetic image counts, augmentation policy and synthetic per-class counts.
 
-Default output directories are `outputs/standard_aug_10shot_seed0` and
-`outputs/real_synthetic_10shot_seed0`. Existing results are never overwritten; choose a new
+Default output directories are `outputs/standard_aug_10shot_seed0`,
+`outputs/real_synthetic_10shot_seed0` and `outputs/diffusion_aug_10shot_seed0`. Existing results are never overwritten; choose a new
 `--output` to rerun. Repeat with seeds 1 and 2 when extending the paired comparison, including a
 matching real-only baseline for each seed. The synthetic pool is reused across seeds.
 

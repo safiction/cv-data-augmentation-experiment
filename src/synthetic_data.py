@@ -6,6 +6,11 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 
+# Review decisions (docs/generation.md). Accepted images have the right species label; defects
+# alone do not drop an image.
+DECISIONS = ("ok", "wrong_species", "artifact", "not_a_bird", "leak")
+ACCEPTED = ("ok", "artifact")
+
 
 def load_synthetic_manifest(path, class_names):
     """Read a prepared manifest; paths are relative to the manifest's directory.
@@ -48,8 +53,16 @@ class SyntheticImages(Dataset):
     def __len__(self):
         return len(self.rows)
 
-    def __getitem__(self, index):
+    @property
+    def image_ids(self):
+        return [row["image_id"] for row in self.rows]
+
+    def load(self, index):
+        """Untransformed RGB image, label and ID."""
         row = self.rows[index]
         with Image.open(row["path"]) as image:
-            pixels = self.transform(image.convert("RGB"))
-        return {"pixel_values": pixels, "label": int(row["label"]), "image_id": row["image_id"]}
+            return image.convert("RGB"), int(row["label"]), row["image_id"]
+
+    def __getitem__(self, index):
+        image, label, image_id = self.load(index)
+        return {"pixel_values": self.transform(image), "label": label, "image_id": image_id}

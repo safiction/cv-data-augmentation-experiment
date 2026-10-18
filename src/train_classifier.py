@@ -1,4 +1,5 @@
-"""Train real-only, standard augmentation or mixed real/synthetic CUB arms; evaluate validation."""
+"""Train real-only, standard augmentation or real/synthetic CUB arms (with or without crops/flips);
+evaluate validation."""
 import argparse
 import csv
 import math
@@ -30,7 +31,8 @@ def parse_args(argv=None):
     subset.add_argument("--all-train", dest="k_shot", action="store_const", const=None,
                         help="Use every image in the training split instead of a k-shot subset")
     parser.add_argument("--augment", action="store_true",
-                        help="Append one fixed crop/flip version per real image (double dataset size)")
+                        help="Append one fixed crop/flip version per training image (double dataset size); "
+                             "with --synthetic-manifest this is the diffusion augmentation arm")
     parser.add_argument("--synthetic-manifest", type=Path,
                         help="Prepared synthetic CSV to append to real training images")
     parser.add_argument("--full-image", action="store_true",
@@ -46,8 +48,6 @@ def parse_args(argv=None):
     parser.add_argument("--amp", action="store_true", help="Enable mixed precision on CUDA")
     parser.add_argument("--output", type=Path, help="New output directory; must not already exist")
     args = parser.parse_args(argv)
-    if args.augment and args.synthetic_manifest is not None:
-        parser.error("--augment cannot be combined with --synthetic-manifest; real + synthetic uses no random crops/flips")
     if args.full_image and (args.augment or args.synthetic_manifest is not None):
         parser.error("--full-image selects the real-only control; omit --augment and --synthetic-manifest")
     for name in ("max_steps", "eval_every", "log_every", "batch_size"):
@@ -138,8 +138,10 @@ def main(argv=None):
     device = resolve_device(args.device)
     if args.amp and device.type != "cuda":
         raise ValueError("--amp requires a CUDA device")
-    arm = "real_synthetic" if args.synthetic_manifest else (
-        "standard_aug" if args.augment else "baseline_full_image" if args.full_image else "baseline")
+    if args.synthetic_manifest:
+        arm = "diffusion_aug" if args.augment else "real_synthetic"
+    else:
+        arm = "standard_aug" if args.augment else "baseline_full_image" if args.full_image else "baseline"
     subset_name = "all_train" if args.k_shot is None else f"{args.k_shot}shot"
     output = args.output or PROJECT_ROOT / "outputs" / f"{arm}_{subset_name}_seed{args.seed}"
     if output.exists():
@@ -176,8 +178,9 @@ def main(argv=None):
         architecture="resnet18", weights="IMAGENET1K_V1", class_names=names,
         frozen_backbone=True, frozen_batchnorm=True, selection_metric="val_macro_f1",
         train_images=len(train_loader.dataset), real_train_images=len(train_manifest),
-        augmented_train_images=len(train_manifest) if args.augment else 0,
-        augmentation_policy="one_fixed_view_per_real_image" if args.augment else None,
+        augmented_train_images=(len(train_manifest) + (0 if synthetic is None else len(synthetic))
+                                if args.augment else 0),
+        augmentation_policy="one_fixed_view_per_training_image" if args.augment else None,
         synthetic_train_images=0 if synthetic is None else len(synthetic),
         train_preprocessing=("full_image_resize_224" if args.full_image else
                              "center_crop_originals_plus_fixed_crop_flip" if args.augment else

@@ -135,12 +135,11 @@ class SyntheticDataTests(unittest.TestCase):
                 self.assertGreater(first[0, 112, 0].item(), first[2, 112, 0].item())
                 self.assertGreater(first[1, 112, -1].item(), first[0, 112, -1].item())
 
-    def test_combining_standard_augmentation_and_synthetic_data_is_rejected(self):
+    def test_full_image_control_cannot_add_images(self):
         with self.assertRaises(SystemExit):
-            parse_args(["--augment", "--synthetic-manifest", "manifest.csv"])
-        with self.assertRaisesRegex(ValueError, "no random crops/flips"):
-            get_dataset("train", augment=True, synthetic_manifest="manifest.csv")
-
+            parse_args(["--full-image", "--synthetic-manifest", "manifest.csv"])
+        with self.assertRaisesRegex(ValueError, "real-only control"):
+            get_dataset("train", full_image=True, synthetic_manifest="manifest.csv")
 
 if __name__ == "__main__":
     unittest.main()
