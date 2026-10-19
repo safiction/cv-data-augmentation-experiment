@@ -159,10 +159,11 @@ Keep the same real subset and training settings as the baseline. The saved seed-
 weight decay 0.0001, validation every 100 steps, CUDA and AMP. The standard arm uses 2,000 real
 originals plus 2,000 fixed augmented views, one crop/flip version of each real image. Originals
 use resize-shorter-side-to-256 and center-crop-to-224 preprocessing, matching the original baseline.
-The real + synthetic arm appends 10 generated images per class to
+The real + synthetic arm appends up to 10 accepted generated images per class to
 the same real subset. Both real and generated images use the baseline's resize-shorter-side-to-256
 and center-crop-to-224 preprocessing, with no random crops/flips.
-Both comparison arms therefore contain 4,000 entries: 2,000 originals plus 2,000 additional images.
+The standard arm contains 4,000 entries; the real + synthetic arm contains up to 4,000,
+depending on how many generated images survive review and leakage filtering.
 Augmented views are recreated lazily using a seed derived from the image ID and run seed. The
 same augmented entry stays identical across accesses and workers; no extra JPG files are required.
 
@@ -175,13 +176,13 @@ The `sheets/` directory contains contact sheets and is excluded from training.
 python src/train_classifier.py --seed 0 --augment --device cuda --amp
 
 # Validate labels, image decoding and generation MD5s; keep reviewed ok/artifact images;
-# drop val/test duplicates; take the first 10 per species.
+# drop val/test duplicates; take up to the first 10 per species, keeping partial species.
 python src/prepare_synthetic.py --device cuda --review reports/generation/review_sd15_wildlife.csv --per-class 10
 
-# Real + synthetic: 2,000 real plus 2,000 generated images, both resize + center crop.
+# Real + synthetic: 2,000 real plus up to 2,000 generated images, both resize + center crop.
 python src/train_classifier.py --seed 0 --device cuda --amp --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
 
-# Diffusion augmentation (plan arm): real + synthetic, plus one fixed crop/flip version of each = 8,000 entries.
+# Diffusion augmentation (plan arm): real + synthetic, plus one fixed crop/flip version of each = up to 8,000 entries.
 python src/train_classifier.py --seed 0 --device cuda --amp --augment --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
 ```
 
@@ -190,14 +191,17 @@ Preparation writes a manifest with image SHA-256 hashes and `leakage_report.json
 project's 0.93 threshold against real validation and test images, ignoring class labels. Matches
 are excluded and accepted counts are reported; this uses no classifier test metrics. With
 `--review`, only images with decision `ok` or `artifact` in the manual review table are kept
-(every pool image must be reviewed). After leakage filtering the first `--per-class` images of
+(every pool image must be reviewed). After leakage filtering up to the first `--per-class` images of
 each species by image ID are selected, so rejected images are replaced by later seeds; species with
-fewer accepted images get none and are listed under `quality_review.species_without_synthetic` in
-`leakage_report.json` (see the acceptance rules in `docs/generation.md`). Without `--review` the
+fewer accepted images keep all remaining images. `leakage_report.json` records the actual selected
+counts by numeric label in `accepted_per_class`, including zeros, and lists all species below the
+target in `quality_review.species_below_target`. `quality_review.species_without_synthetic` lists
+only species with zero selected images (see the acceptance rules in `docs/generation.md`). Without `--review` the
 pool must have exactly `--expected-per-class` images per species and no review is applied.
 
-Both comparison loaders shuffle a combined dataset of 4,000 entries. Approximately half are
-original real views and half are augmented or synthetic views. Keep the optimizer-step budget fixed across
+Both comparison loaders shuffle the combined dataset. The standard arm has 4,000 entries;
+the real + synthetic arm has 2,000 real entries plus the actual selected synthetic count.
+Keep the optimizer-step budget fixed across
 arms, rather than the number of epochs. Both sources in real + synthetic training receive RGB
 conversion, aspect-ratio-preserving resize of the shorter side to 256, center crop to 224 x 224,
 tensor conversion and ImageNet normalization. The baseline, both arms' original halves,

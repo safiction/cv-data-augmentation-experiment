@@ -1,10 +1,11 @@
 """Diffusion augmentation arm (crops/flips + synthetic) and review-based synthetic selection."""
 import hashlib
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import torch
@@ -13,7 +14,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from prepare_synthetic import apply_review, read_pool, take_per_class
+from prepare_synthetic import apply_review, main as prepare_synthetic, read_pool, take_per_class
 from preprocessing import eval_transform, get_dataset, get_loader
 from train_classifier import parse_args
 
@@ -126,14 +127,58 @@ class ReviewSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "repeats image IDs"):
             apply_review(pool, pd.concat([repeated, repeated.iloc[:1]]))
 
-    def test_first_n_per_species_and_short_species_get_none(self):
+    def test_first_n_per_species_and_short_species_keep_all_remaining(self):
         pool = self.pool(per_class=4)
         kept = apply_review(pool, self.review(pool, ["wrong_species", "ok", "ok", "artifact",
                                                      "ok", "wrong_species", "not_a_bird", "leak"]))
         selected, short = take_per_class(kept.sample(frac=1, random_state=0), 2, NAMES)
         # Species A: the rejected first seed is replaced by the next accepted ones.
-        self.assertEqual(selected.image_id.tolist(), pool.image_id[[1, 2]].tolist())
+        self.assertEqual(selected.image_id.tolist(), pool.image_id[[1, 2, 4]].tolist())
         self.assertEqual(short, [NAMES[1]])
+
+    def test_species_with_no_remaining_images_are_reported_as_short(self):
+        pool = self.pool(per_class=2)
+        for remaining in (pool.iloc[:2], pool.iloc[:0]):
+            with self.subTest(images=len(remaining)):
+                selected, short = take_per_class(remaining, 2, NAMES)
+                self.assertEqual(selected.image_id.tolist(), remaining.image_id.tolist())
+                self.assertEqual(short, NAMES[1:] if len(remaining) else NAMES)
+
+    def test_preparation_reports_actual_counts_and_shortages_after_leakage(self):
+        temp = tempfile.TemporaryDirectory(dir=ROOT)
+        self.addCleanup(temp.cleanup)
+        pool_dir = Path(temp.name)
+        pool = self.pool(per_class=4)
+        pool["path"] = [str(pool_dir / f"{i}.jpg") for i in range(len(pool))]
+        pool["md5"] = [f"hash-{i}" for i in range(len(pool))]
+        pool["sha256"] = [f"sha-{i}" for i in range(len(pool))]
+        pool.to_csv(pool_dir / "metadata.csv", index=False)
+        review_path = pool_dir / "review.csv"
+        self.review(pool, ["wrong_species", "ok", "ok", "artifact",
+                           "ok", "ok", "not_a_bird", "leak"]).to_csv(review_path, index=False)
+        names = NAMES + ["003.Species_C"]
+        holdout = pd.DataFrame({"image_id": ["real/heldout"]})
+        raw = Mock()
+        raw.cast_column.return_value = {"image_id": ["real/heldout"],
+                                        "image": [{"bytes": b"heldout", "path": None}]}
+        output = pool_dir / "prepared"
+        with patch("prepare_synthetic.class_names_from_manifest", return_value=names), patch(
+                "prepare_synthetic.load_manifest", return_value=holdout), patch(
+                "prepare_synthetic.read_pool", return_value=pool), patch(
+                "prepare_synthetic.resnet18"), patch("prepare_synthetic.features"), patch(
+                "prepare_synthetic.load_from_disk", return_value={"val": raw, "test": raw}), patch(
+                "prepare_synthetic.get_loader"), patch(
+                "prepare_synthetic.duplicate_pairs", side_effect=[[(4, 0, 1.0)], []]):
+            prepare_synthetic(["--pool", str(pool_dir), "--review", str(review_path),
+                               "--per-class", "2", "--device", "cpu"])
+        selected = pd.read_csv(output / "manifest.csv")
+        self.assertEqual(selected.image_id.tolist(), pool.image_id[[1, 2, 4]].tolist())
+        report = json.loads((output / "leakage_report.json").read_text())
+        self.assertEqual(report["accepted_images"], 3)
+        self.assertEqual(report["excluded_images"], 1)
+        self.assertEqual(report["accepted_per_class"], {"0": 2, "1": 1, "2": 0})
+        self.assertEqual(report["quality_review"]["species_below_target"], names[1:])
+        self.assertEqual(report["quality_review"]["species_without_synthetic"], names[2:])
 
     def test_reviewed_pools_may_hold_extra_seeds(self):
         temp = tempfile.TemporaryDirectory(dir=ROOT)

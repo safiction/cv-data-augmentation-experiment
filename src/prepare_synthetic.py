@@ -6,7 +6,7 @@ integrity and leakage.
 With --review, species fidelity comes from the manual review table (docs/generation.md): only
 ACCEPTED images are kept, leakage matches are dropped, then the first --per-class images of each
 species by image ID are selected, so dropped images are replaced by the next seeds. A species with
-fewer accepted images gets no synthetic images and is listed in the report.
+fewer accepted images keeps all remaining images and is listed in the report.
 
 Usage: python src/prepare_synthetic.py --pool data/synthetic/sd15_wildlife \
            --review reports/generation/review_sd15_wildlife.csv --per-class 10
@@ -87,11 +87,11 @@ def apply_review(manifest, review):
 
 
 def take_per_class(manifest, per_class, class_names):
-    """First per_class images of each species by image ID, and the species with fewer images."""
+    """Keep up to per_class images per species by image ID; report species below the target."""
     ordered = manifest.sort_values("image_id")
     counts = ordered.groupby("label").size().reindex(range(len(class_names)), fill_value=0)
     short = [class_names[label] for label in counts.index[counts < per_class]]
-    selected = ordered[ordered["label"].map(counts) >= per_class].groupby("label").head(per_class)
+    selected = ordered.groupby("label").head(per_class)
     return selected.sort_values(["label", "image_id"]).reset_index(drop=True), short
 
 
@@ -115,7 +115,7 @@ def main(argv=None):
     parser.add_argument("--review", type=Path,
                         help="Review table (reports/generation/review_{pool}.csv); keep accepted images only")
     parser.add_argument("--per-class", type=int, default=10,
-                        help="With --review: synthetic images per species after review and leakage filtering")
+                        help="With --review: maximum synthetic images per species after review and leakage filtering")
     args = parser.parse_args(argv)
     if args.batch_size <= 0 or args.expected_per_class <= 0 or args.per_class <= 0:
         parser.error("batch size and per-class counts must be positive")
@@ -161,22 +161,24 @@ def main(argv=None):
     if args.review:
         accepted, short = take_per_class(accepted, args.per_class, names)
         print(f"Selected {len(accepted)} images; {len(short)} species have fewer than "
-              f"{args.per_class} accepted images and get none", flush=True)
+              f"{args.per_class} accepted images and keep all remaining images", flush=True)
     if accepted.empty:
         raise ValueError("No synthetic images remain after leakage filtering")
     accepted["path"] = [Path(os.path.relpath(p, output)).as_posix() for p in accepted.path]
+    counts = accepted.groupby("label").size().reindex(range(len(names)), fill_value=0)
     report = {
         "pool_images": pool_images, "input_images": len(manifest), "accepted_images": len(accepted),
         "excluded_images": len(excluded), "min_similarity": DUP_MIN_SIM,
         "detector": "MD5 equality or cosine similarity of normalized ImageNet ResNet-18 features",
         "labels_ignored": True, "device": str(device), "matches": matches,
-        "accepted_per_class": {str(k): int(v) for k, v in accepted.groupby("label").size().items()},
+        "accepted_per_class": {str(k): int(v) for k, v in counts.items()},
         "metadata_sha256": hashlib.sha256((args.pool / "metadata.csv").read_bytes()).hexdigest(),
         "source_sha256": {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
                           for name in ("prepare_synthetic.py", "leakage.py", "preprocessing.py", "synthetic_data.py")},
         "quality_review": ({"review_table": str(args.review), "accepted_decisions": list(ACCEPTED),
                             "review_sha256": hashlib.sha256(args.review.read_bytes()).hexdigest(),
-                            "per_class": args.per_class, "species_without_synthetic": short}
+                            "per_class": args.per_class, "species_below_target": short,
+                            "species_without_synthetic": [names[label] for label in counts.index[counts == 0]]}
                            if args.review else "No manual species-fidelity review recorded by this script"),
         "evaluation": "Val/test used only for duplicate detection; no classifier metrics or quality selection",
     }
