@@ -85,15 +85,18 @@ def test_eval_loader_unshuffled_and_deterministic():
 @pytest.mark.parametrize("num_workers", [0, 2])
 def test_train_loader_reproducible_and_paired_across_arms(num_workers):
     def batches(augment, seed=0):
-        torch.manual_seed(seed)  # needed for the augmentation RNG only when num_workers == 0
+        torch.manual_seed(seed)
         return first_batches(get_loader("train", k_shot=10, seed=seed, augment=augment, batch_size=32,
                                         num_workers=num_workers))
 
     aug, aug_again, plain, other_seed = batches(True), batches(True), batches(False), batches(False, seed=1)
     assert all(torch.equal(x["pixel_values"], y["pixel_values"]) for x, y in zip(aug, aug_again))
-    # same images in the same order in both arms: only the transform differs
-    assert all(torch.equal(x["label"], y["label"]) for x, y in zip(aug, plain))
-    assert not torch.equal(aug[0]["pixel_values"], plain[0]["pixel_values"])
+    # The augmented pool is twice as large; its shuffled order differs from the baseline.
+    manifest = load_manifest("train", 10, 0)
+    labels = dict(zip(manifest["image_id"], manifest["label"]))
+    for batch in aug:
+        assert batch["label"].tolist() == [labels[image_id] for image_id in batch["image_id"]]
+    assert all(x["image_id"] == y["image_id"] for x, y in zip(aug, aug_again))
     assert not torch.equal(plain[0]["label"], other_seed[0]["label"])
 
 

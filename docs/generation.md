@@ -99,6 +99,11 @@ python src/review_synthetic.py --pool sd15_wildlife            # sheets + leakag
 python src/review_synthetic.py --pool sd15_wildlife --select 10 --no-leakage
 ```
 
+For training, `prepare_synthetic.py --review reports/generation/review_sd15_wildlife.csv` applies
+the same rules to the images on disk: it keeps `ok`/`artifact`, drops val/test matches, takes the
+first 10 per species and writes the hash-checked manifest for `train_classifier.py
+--synthetic-manifest` (see README).
+
 ### Sharing the pool
 
 Images are not in git. Zip `data/synthetic/{pool}` and upload it to the shared Drive; teammates

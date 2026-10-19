@@ -110,9 +110,11 @@ shared image ids (`reports/leakage_report.json`).
   backbone may have seen some test photos, inflating absolute scores. All arms share the backbone,
   so differences between arms remain valid; absolute numbers should be read with this caveat.
 - *Stable Diffusion training data.* SD 1.5 was trained on web images and can reproduce CUB photos.
-  Before training, check the synthetic pool against val and test with
-  `leakage.duplicate_pairs(syn_md5, syn_emb, syn_labels, md5_test, emb_test, None)` (labels ignored)
-  and drop matches.
+  Before training, run `python src/prepare_synthetic.py --device cuda`. It validates the generated
+  metadata and images, checks the synthetic pool against val and test with
+  `leakage.duplicate_pairs` (labels ignored), and writes a manifest excluding matches. Its
+  `leakage_report.json` records the threshold, matches and accepted counts. See README for the
+  mixed-training command and expected pool layout.
 - *Process.* Val and test images are never used for prompts, generation or synthetic-image
   selection. Normalization uses fixed ImageNet statistics, not statistics of our data.
 
@@ -123,15 +125,31 @@ official split from the HF keys, remove duplicates, assign splits, write manifes
 
 Online (`src/preprocessing.py`):
 
-| Step | Eval / no-aug training | Augmented training |
+| Step | Eval / real-only baseline | Standard augmentation training |
 | --- | --- | --- |
 | Color | convert to RGB (8 images are grayscale: 4 in train, 4 in test) | same |
-| Geometry | resize shorter side to 256, center crop 224 | random resized crop 224, area 50–100% |
-| Flip | — | horizontal, p = 0.5 |
+| Geometry | resize shorter side to 256, center crop 224 | originals: same as baseline; augmented half: random resized crop 224, area 50–100% |
+| Flip | — | augmented half only: horizontal, p = 0.5 |
 | Normalize | ImageNet mean/std | same |
 
 The crop area starts at 50% instead of torchvision's 8%: small crops often cut the bird out,
 which turns a fine-grained sample into a mislabeled background patch.
+
+`augment=True` concatenates the original real-image views with one fixed augmented view per real
+image: a 10-shot manifest of 2,000 sources yields 4,000 entries, 20 per species. Fixed crop/flip
+parameters are derived from the image ID and run seed; repeated accesses recreate the same view.
+The originals use the same resize/center-crop transform as the original real-only baseline.
+
+Real + synthetic training uses the baseline deterministic transform on both sources: RGB conversion,
+aspect-ratio-preserving resize of the shorter side to 256, center crop to 224 x 224, tensor conversion
+and ImageNet normalization. It applies no random crops/flips. Its real original views now match
+the standard arm's originals, baseline and evaluation. The loader rejects `augment=True` with a
+synthetic manifest.
+
+The real-only `full_image=True` control keeps exactly the original manifest entries while using
+direct whole-image resizing for a historical preprocessing diagnostic. It applies only to training and cannot be
+combined with augmentation or synthetic images. Run it with `train_classifier.py --full-image`;
+the default baseline and validation/test continue to use the center-crop transform.
 
 `python src/preview_transforms.py` saves `reports/figures/transforms_preview.jpg`: original,
 eval view and four augmented views of six training images. Birds stay in the frame, but for long
@@ -153,10 +171,10 @@ folder name, `load_data.NUM_CLASSES == 200`.
 
 Loaders:
 
-- **train** shuffles with a generator seeded by `seed`. Arms with the same seed get the same images
-  in the same batch order (with or without augmentation), so arm comparisons are paired.
-  With `num_workers > 0` the random crops and flips are reproducible too; with `num_workers=0`,
-  call `torch.manual_seed(seed)` before training.
+- **train** shuffles with a generator seeded by `seed`. Both comparison arms contain the same
+  2,000 original source IDs followed by 2,000 additional entries, so the same seed pairs their source
+  positions and batch order. Augmented versions are fixed per image and seed regardless of access
+  order or worker count, and preserve the caller's torch RNG state.
 - **val/test** are not shuffled and use the deterministic transform.
 - `get_dataset(...)` returns the same data without the loader, e.g. for a custom sampler.
 

@@ -107,6 +107,15 @@ class ClassifierTests(unittest.TestCase):
             with self.subTest(arguments=arguments), self.assertRaises(SystemExit):
                 parse_args(arguments)
 
+    def test_full_training_selection_keeps_default_subset_and_rejects_conflicts(self):
+        self.assertEqual(parse_args([]).k_shot, 10)
+        self.assertEqual(parse_args(["--k-shot", "20"]).k_shot, 20)
+        self.assertIsNone(parse_args(["--all-train"]).k_shot)
+        for arguments in (["--all-train", "--k-shot", "20"],
+                          ["--k-shot", "20", "--all-train"]):
+            with self.subTest(arguments=arguments), self.assertRaises(SystemExit):
+                parse_args(arguments)
+
 
 if __name__ == "__main__":
     unittest.main()
