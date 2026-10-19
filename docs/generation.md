@@ -101,8 +101,11 @@ python src/review_synthetic.py --pool sd15_wildlife --select 10 --no-leakage
 
 For training, `prepare_synthetic.py --review reports/generation/review_sd15_wildlife.csv` applies
 the same rules to the images on disk: it keeps `ok`/`artifact`, drops val/test matches, takes the
-first 10 per species and writes the hash-checked manifest for `train_classifier.py
---synthetic-manifest` (see README).
+first 10 per species (or all remaining images if fewer than 10 survive) and writes the hash-checked
+manifest for `train_classifier.py --synthetic-manifest` (see README). Its `leakage_report.json`
+records actual selected counts in `accepted_per_class` (numeric labels, including zeros), species
+with fewer than the target in `quality_review.species_below_target`, and species with zero selected
+images in `quality_review.species_without_synthetic`.
 
 ### Sharing the pool
 
@@ -175,8 +178,9 @@ Agreed by the team after the pilot.
 - An image enters the training pool with decision `ok` or `artifact`: the label is right, and
   defects are a quality question for the filtered vs. unfiltered extension. `wrong_species`,
   `not_a_bird` and `leak` are dropped.
-- Dropped images are replaced by the next seeds of the same species (`--per-class` higher), so
-  every species keeps exactly 10 synthetic images and the 1:1 ratio holds.
-- If SD cannot draw a species (fewer than 10 accepted images out of 20 seeds), it gets no synthetic
-  images, and this is reported.
+- Dropped images can be replaced by the next seeds of the same species (`--per-class` higher),
+  aiming for 10 synthetic images per species and a 1:1 ratio.
+- During training preparation, if fewer than 10 images of a species survive review and leakage
+  filtering, all remaining images are kept. Actual counts and all species below the target
+  (including species with zero images) are reported; the resulting ratio may be below 1:1.
 - The unfiltered pool is kept: filtered vs. unfiltered is a planned optional extension.
