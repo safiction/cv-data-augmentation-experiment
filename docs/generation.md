@@ -184,3 +184,18 @@ Agreed by the team after the pilot.
   filtering, all remaining images are kept. Actual counts and all species below the target
   (including species with zero images) are reported; the resulting ratio may be below 1:1.
 - The unfiltered pool is kept: filtered vs. unfiltered is a planned optional extension.
+
+### Review results
+
+The full pool `sd15_wildlife` (2,000 images) was reviewed by two people: `ok` 1,120, `artifact` 320,
+`wrong_species` 536, `not_a_bird` 24. Species 101–153 were reviewed by both; the decisions differed
+for 260 of 530 images, mostly `ok` vs. `wrong_species`, so the line between them is subjective.
+1,440 images were accepted (`ok` + `artifact`) and none matched val/test. 82 species keep all 10
+images, 118 fewer, 15 none. The prepared manifest is in
+[reports/generation/prepared_sd15_wildlife_accepted/](../reports/generation/prepared_sd15_wildlife_accepted/).
+
+## Training results
+
+Real + accepted synthetic, 10-shot, seeds 0–2: validation macro F1 51.31% ± 2.11 pp, against
+53.15% for real-only (seed 0; paired change −4.19 pp) and 59.69% ± 0.71 pp for 20 real images per
+species. Details and conclusions: [reports/accepted_synthetic_10shot_seeds0-2.md](../reports/accepted_synthetic_10shot_seeds0-2.md).
