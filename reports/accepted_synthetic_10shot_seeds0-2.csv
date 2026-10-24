@@ -1,0 +1,4 @@
+run,arm,seed,k_shot,augment,train_images,val_images,macro_f1,accuracy,val_loss,best_step,optimizer_steps,training_seconds,validated,macro_precision,macro_recall,gpu
+outputs/accepted_synthetic_10shot_seed0_20261023/real_synthetic_10shot_seed0,real_synthetic,0,10,False,3440,1000,0.4896040149221264,0.502,1.9848646774291991,600,1000,464.63095880000037,True,0.546253108003108,0.502,NVIDIA GeForce RTX 4060 Laptop GPU
+outputs/accepted_synthetic_10shot_seed1,real_synthetic,1,10,False,3440,1000,0.530621319856614,0.539,1.8664706115722656,800,1000,296.0583904000014,True,0.5805564574314575,0.539,NVIDIA GeForce RTX 3070
+outputs/accepted_synthetic_10shot_seed2,real_synthetic,2,10,False,3440,1000,0.5189851404185769,0.522,1.8218213577270508,900,1000,295.9099519999945,True,0.5755679112554113,0.522,NVIDIA GeForce RTX 3070
