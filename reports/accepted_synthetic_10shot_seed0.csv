@@ -1,0 +1,4 @@
+run,arm,seed,k_shot,augment,train_images,val_images,macro_f1,accuracy,val_loss,best_step,optimizer_steps,training_seconds,validated,label,real_images,synthetic_images,delta_macro_f1_vs_real_only_pp
+outputs/baseline_10shot_seed0,baseline,0,10,False,2000,1000,0.5314625097125097,0.533,1.8819977264404297,700,1000,444.5858348000329,True,"Real-only, center crop",2000,0,0.0
+outputs/real_synthetic_10shot_seed0,real_synthetic,0,10,False,4000,1000,0.48157997798555074,0.489,1.9373368072509765,900,1000,531.6804487000045,True,"Real + all synthetic, center crop",2000,2000,-4.9882531726959005
+outputs/accepted_synthetic_10shot_seed0_20261023/real_synthetic_10shot_seed0,real_synthetic,0,10,False,3440,1000,0.4896040149221264,0.502,1.9848646774291991,600,1000,464.63095880000037,True,"Real + accepted synthetic, center crop",2000,1440,-4.185849479038334
