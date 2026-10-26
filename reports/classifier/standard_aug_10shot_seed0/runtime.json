@@ -1,0 +1,7 @@
+{
+  "training_with_validation_seconds": 1453.0393455000012,
+  "best_step": 900,
+  "best_val_macro_f1": 0.5353720207896678,
+  "optimizer_steps": 1000,
+  "scope": "Training, periodic validation and saves; excludes setup and final evaluation"
+}

@@ -1,0 +1,4 @@
+run,arm,seed,k_shot,augment,train_images,val_images,macro_f1,accuracy,val_loss,best_step,optimizer_steps,training_seconds,validated
+standard_aug_10shot_seed0,standard_aug,0,10,True,4000,1000,0.5353114147290617,0.537,1.8327215576171876,900,1000,415.44439226099996,True
+standard_aug_10shot_seed1,standard_aug,1,10,True,4000,1000,0.5296090257781434,0.539,1.8298187866210938,800,1000,403.8903420820001,True
+standard_aug_10shot_seed2,standard_aug,2,10,True,4000,1000,0.5403404511724945,0.545,1.7408106155395509,1000,1000,404.10516600999995,True
