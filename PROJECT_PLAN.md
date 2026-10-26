@@ -13,7 +13,7 @@
 - **Limited-data subset:** sample 10 real train-pool images per class, giving 2,000 images per run. Manifests for seeds 0, 1, and 2 define the paired subsets used by all three approaches. Unused train-pool images remain outside the core experiments.
 - **EDA findings:** no missing images; training classes are nearly balanced.
 - **Duplicates and leakage:** 42 duplicate training images were removed, including train copies of test images. No duplicates remain across train, validation, and test; the official test set was not modified.
-- **Preprocessing:** convert grayscale images to RGB and use ImageNet normalization to match the classifier's pretrained inputs. Baseline, evaluation, both comparison arms' real originals and generated images resize the shorter side to 256 (preserving aspect ratio) and center-crop to 224×224. Standard augmentation adds one fixed random resized crop/flip view per original. Real + synthetic uses no random crops/flips. Both comparison arms have 4,000 entries and share original-image preprocessing; the full-image real-only control is retained as a historical diagnostic.
+- **Preprocessing:** convert grayscale images to RGB and use ImageNet normalization to match the classifier's pretrained inputs. Baseline, evaluation, both comparison arms' real originals and generated images resize the shorter side to 256 (preserving aspect ratio) and center-crop to 224×224. Standard augmentation adds one fixed random resized crop/flip view per original. Real + synthetic uses no random crops/flips. **Update — 26 October 2026:** standard augmentation has 4,000 entries; real + reviewed synthetic has 3,440. Both share original-image preprocessing; the full-image real-only control is retained as a historical diagnostic.
 
 Validation and test contain only real images, so evaluation measures performance on real data. Never use their images for generation or synthetic-image selection.
 
@@ -23,13 +23,19 @@ Validation and test contain only real images, so evaluation measures performance
 
 **Generator:** pretrained [Stable Diffusion 1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5), using species-name prompts and 512×512 images. Use FP16 and one image at a time to reduce GPU memory demand. Reusing the generator avoids diffusion-model training. Check species fidelity in the pilot: a realistic bird may still be the wrong species.
 
+**Update — 26 October 2026:** the primary comparison retains 10 real images per species and the same real subset for each paired seed across all three approaches. Additional images do not change the real-data shot count.
+
 | Approach | Training data | Purpose |
 | --- | --- | --- |
 | Real-only baseline | 2,000 real images | Reference performance |
 | Real + standard augmentation | 2,000 real originals + 2,000 fixed crop/flip versions, one per real image | Tests ordinary augmentation in a 4,000-entry dataset |
-| Real + synthetic | Same 2,000 real images + 2,000 synthetic images, 10 per class; both sources use resize-to-256 and center-crop-to-224, with no random crops/flips | Compares generated data at a 1:1 synthetic-to-real ratio |
+| Real + reviewed synthetic | Same 2,000 real images + 1,440 accepted synthetic images; both sources use resize-to-256 and center-crop-to-224, with no random crops/flips | Tests the reviewed pool in a 3,440-entry dataset at an overall synthetic-to-real ratio of 0.72:1 |
 
-**Budget:** three approaches × three paired seeds = **9 classifier runs**, plus setup/pilots. Pair real subsets and classifier initialization across approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reuse one synthetic pool, so seed variability does not measure variability between generated pools.
+**Reviewed pool — update, 26 October 2026:** retain `ok` (1,120) and `artifact` (320; correct species with visual defects) images, up to 10 per species. Keep available accepted images when fewer than 10 remain. Counts vary by species, including species with none; additional generation is postponed. Reuse this fixed pool across seeds.
+
+**Budget — update, 26 October 2026:** the primary comparison remains **9 runs** (three approaches × three paired seeds); **7 are complete**, with 10-shot real-only seeds 1 and 2 remaining. The additional 20-shot real-only comparison comprises **3 completed runs**, for **12 planned comparison runs in total**. Earlier diagnostic runs and repeated runs are tracked separately. Pair real subsets and classifier initialization across the primary approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reusing one synthetic pool means seed variability does not measure variability between generated pools.
+
+**20-shot reference — update, 26 October 2026:** compare against real-only training on 4,000 real images (20 per species), seeds 0–2. This measures performance with more real data and does not replace the matched 10-shot baseline or isolate the effect of augmentation.
 
 **Preprocessing control:** an additional real-only run uses the same 2,000-image subset with
 direct full-image resizing to 224 x 224 for training and no added images. All training settings
@@ -43,9 +49,9 @@ change separately from the core three-arm comparison; run with `--full-image`.
 | **Per-class precision, recall, F1** | Identifies which species benefit or deteriorate |
 | **Generation and training time, separately** | Shows the computational cost of improvements; record hardware |
 
-Select checkpoints on validation macro F1. After fixing experimental choices, evaluate on test; report mean ± standard deviation across seeds and paired macro-F1 changes in percentage points. Discuss seed variability and at least three real test failure examples.
+Select checkpoints on validation macro F1. **Update — 26 October 2026:** complete the remaining 10-shot baseline runs, compare validation results, then freeze experimental choices and selected checkpoints before test evaluation. Report mean ± standard deviation across seeds and paired macro-F1 changes in percentage points. Discuss seed variability and at least three real test failure examples.
 
-**Optional extensions, outside the nine-run scope:** synthetic-to-real ratios 0.5:1 and 2:1; 5/20 real images per class; fine-tuning the final classifier block; filtered versus unfiltered synthetic data; varied prompts/backgrounds; deliberately imbalanced training classes. Change one factor at a time; keep synthetic counts equal when comparing quality or diversity.
+**Optional extensions — update, 26 October 2026:** the 20-shot reference is complete. Original versus reviewed synthetic data has been compared at seed 0, but both quality and quantity changed. Remaining optional extensions include controlled synthetic-to-real ratios, 5-shot training, fine-tuning the final classifier block, quality comparisons at matched counts and class coverage, varied prompts/backgrounds, and deliberately imbalanced training classes. Defer these until the primary comparison is complete; change one factor at a time.
 
 ## 4. Implementation plan
 
@@ -77,4 +83,6 @@ Select checkpoints on validation macro F1. After fixing experimental choices, ev
 | **3 Nov** | Freeze checkpoints; export test predictions | Verify reproducibility | Finalize generation quality/cost records | Final test metrics, runtime tables, figures |
 | **10 Nov** | Classifier section/slides; demo | Data section/slides; README/environment | Generation section/slides; assemble presentation | Evaluation section/slides; edit two-page summary |
 
-Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed runs count toward the nine-run total. Review active workload weekly; assign optional experiments only if capacity remains.
+**Schedule update — 26 October 2026:** complete 10-shot real-only seeds 1 and 2 by **3 November**, before final test evaluation. Proposed owner: **Karina**, consistent with the real-only training responsibility, pending team confirmation. Arina will compare the completed paired validation results before the team freezes experimental choices and checkpoints.
+
+Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
