@@ -1,0 +1,4 @@
+pool,template,images,species,gpu,dtype,scheduler,steps,guidance,size,batch_size,median_seconds_per_image,mean_seconds_per_image,total_minutes,ok,wrong_species,artifact,not_a_bird,leak,accepted,accepted_share,seconds_per_accepted_image,val_matches,test_matches
+pilot_photo,photo,50,10,NVIDIA GeForce RTX 3070,float16,DPMSolverMultistepScheduler,25,7.5,512,1,2.1574999999999998,2.16666,1.8055499999999998,34,6,10,0,0,44,0.88,2.462113636363636,0,0
+pilot_wildlife,wildlife,50,10,NVIDIA GeForce RTX 3070,float16,DPMSolverMultistepScheduler,25,7.5,512,1,2.175,2.17998,1.81665,36,3,11,0,0,47,0.94,2.3191276595744683,0,0
+sd15_wildlife,wildlife,2000,200,NVIDIA GeForce RTX 3070,float16,DPMSolverMultistepScheduler,25,7.5,512,1,2.895,2.8968344999999998,96.56115,1120,536,320,24,0,1440,0.72,4.02338125,0,0
