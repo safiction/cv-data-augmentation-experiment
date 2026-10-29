@@ -83,6 +83,4 @@ Select checkpoints on validation macro F1. **Update — 26 October 2026:** compl
 | **3 Nov** | Freeze checkpoints; export test predictions | Verify reproducibility | Finalize generation quality/cost records | Final test metrics, runtime tables, figures |
 | **10 Nov** | Classifier section/slides; demo | Data section/slides; README/environment | Generation section/slides; assemble presentation | Evaluation section/slides; edit two-page summary |
 
-**Schedule update — 26 October 2026:** complete 10-shot real-only seeds 1 and 2 by **3 November**, before final test evaluation. Proposed owner: **Karina**, consistent with the real-only training responsibility, pending team confirmation. Arina will compare the completed paired validation results before the team freezes experimental choices and checkpoints.
-
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
