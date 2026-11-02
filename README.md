@@ -67,6 +67,14 @@ val, test = get_loader("val"), get_loader("test")
 Class names by label: `load_data.class_names()`. Checks: `python -m pytest tests`.
 Transforms preview: `python src/preview_transforms.py` → `reports/figures/transforms_preview.jpg`.
 
+Reproducibility audit (offline, no training or test scoring):
+`python src/check_reproducibility.py --output outputs/reproducibility.json`.
+Add `--require-complete` to require all nine primary run artifacts; baseline seeds 1–2
+are currently missing. Verified evidence, replay commands and limitations:
+[docs/reproducibility.md](docs/reproducibility.md).
+For the validated CPU checkpoint replay, install `requirements-replay.txt`; Pillow 12.2.0
+reproduces all 3,000 standard-augmentation validation predictions from the original T4 runs.
+
 ## Generate synthetic data
 Stable Diffusion 1.5, text-to-image from species names; needs a CUDA GPU (8 GB is enough) and the CUDA build of torch
 (on Windows plain `pip install torch` is CPU-only):

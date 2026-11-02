@@ -86,3 +86,13 @@ Select checkpoints on validation macro F1. **Update — 26 October 2026:** compl
 **Schedule update — 26 October 2026:** complete 10-shot real-only seeds 1 and 2 by **3 November**, before final test evaluation. Proposed owner: **Karina**, consistent with the real-only training responsibility, pending team confirmation. Arina will compare the completed paired validation results before the team freezes experimental choices and checkpoints.
 
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
+
+**Artem — 3 November reproducibility deliverable (verified 2 November):** the offline
+audit validates all ten available comparison runs (seven primary and three 20-shot
+references), split/subset manifests, recorded source/input hashes, prediction-derived
+metrics and checkpoint selection from history. Baseline 10-shot seeds 1–2 are still
+missing. Pinning Pillow 12.2.0 resolved the initial CPU/T4 decoding/preprocessing
+differences: all 3,000 standard-augmentation predictions and per-class metrics now match
+the original T4 results; loss differs by at most `1.38e-7`.
+Baseline/synthetic checkpoint inference and full retraining were not verified.
+Commands, evidence and handoff: [docs/reproducibility.md](docs/reproducibility.md).

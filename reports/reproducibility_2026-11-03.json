@@ -1,0 +1,795 @@
+{
+  "scope": "Saved validation artifacts only; no retraining or checkpoint inference",
+  "errors": [],
+  "runs": [
+    {
+      "run": "baseline_seed0",
+      "status": "passed",
+      "summary": {
+        "run": "baseline_seed0",
+        "arm": "baseline",
+        "seed": 0,
+        "k_shot": 10,
+        "augment": false,
+        "train_images": 2000,
+        "val_images": 1000,
+        "macro_f1": 0.5314625097125097,
+        "accuracy": 0.533,
+        "val_loss": 1.8819977264404297,
+        "best_step": 700,
+        "optimizer_steps": 1000,
+        "training_seconds": 444.5858348000329,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.4",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed0.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed0.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "historical_match",
+          "git_revision": "8f4050fee9c8265f3bf40b41b110001e99f81f23"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "historical_match",
+          "git_revision": "8f4050fee9c8265f3bf40b41b110001e99f81f23"
+        }
+      },
+      "warnings": [
+        "src/train_classifier.py matches historical commit 8f4050fee9c8265f3bf40b41b110001e99f81f23, not current code",
+        "src/preprocessing.py matches historical commit 8f4050fee9c8265f3bf40b41b110001e99f81f23, not current code",
+        "Legacy test manifest is verified through the saved cub_splits.csv hash"
+      ],
+      "artifact_sha256": {
+        "config.json": "46ad6b7458c476d4eb33bb16813583ee96c3618de5ffb5b945e90b138b56bbd8",
+        "history.csv": "9b48f3bdd85d5372b29f3cd04c39eeb15b82ba854cf9202d46f21b4f0d296893",
+        "runtime.json": "8fbc04dc259e60d9aa0d144aa96cf14dd34ec250442ffa3bd9160d6c396958d7",
+        "val_metrics.json": "42467d8a23345dd6808e18955d97c36966fa1cec88505912a642b02903128268",
+        "val_per_class.json": "f33f7f4e0f223417e1c170c5ece084232712e6791789470a84e8384d1d9d5a07",
+        "val_predictions.csv": "49fa07cf3f3eff6bfde00d34a6ece41c4121d9d5a1f45c3c199a51453fb9c866"
+      },
+      "training_command": "python src/train_classifier.py --seed 0 --k-shot 10 --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/baseline_seed0"
+    },
+    {
+      "run": "standard_aug_10shot_seed0_t4",
+      "status": "passed",
+      "summary": {
+        "run": "standard_aug_10shot_seed0_t4",
+        "arm": "standard_aug",
+        "seed": 0,
+        "k_shot": 10,
+        "augment": true,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.5353114147290617,
+        "accuracy": 0.537,
+        "val_loss": 1.8327215576171876,
+        "best_step": 900,
+        "optimizer_steps": 1000,
+        "training_seconds": 415.44439226099996,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.15",
+        "torch": "2.11.0+cu128",
+        "torchvision": "0.26.0+cu128",
+        "sklearn": "1.6.1",
+        "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+        "gpu": "Tesla T4"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed0.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed0.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "647d057618584cd5a01e7b6b2dcdeea159b15cac7eb128c527a14f7bb80cfe87",
+        "history.csv": "f0a3f6ba6243c84ae138722b78cfacf2d5116ab5a3da6f45ac470ae327554ae3",
+        "runtime.json": "901131d1d0291f859b7523ce2053952fc6dd6717826c8eeb4a0fd300c7a71550",
+        "val_metrics.json": "afaec299fdde06074c97de940e09887b77b22494a24a917b4ef9dac4aae3df7f",
+        "val_per_class.json": "79c246107b0e097fefb65ac6abda9d289cd161075909274ffca91dc7c3efe32d",
+        "val_predictions.csv": "4deff0ca58a54b27f62739d83cfe2ccfc04301fc69395f6e1ae98f1f8dda0066"
+      },
+      "training_command": "python src/train_classifier.py --seed 0 --k-shot 10 --augment --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/standard_aug_10shot_seed0_t4"
+    },
+    {
+      "run": "accepted_synthetic_10shot_seed0",
+      "status": "passed",
+      "summary": {
+        "run": "accepted_synthetic_10shot_seed0",
+        "arm": "real_synthetic",
+        "seed": 0,
+        "k_shot": 10,
+        "augment": false,
+        "train_images": 3440,
+        "val_images": 1000,
+        "macro_f1": 0.4896040149221264,
+        "accuracy": 0.502,
+        "val_loss": 1.9848646774291991,
+        "best_step": 600,
+        "optimizer_steps": 1000,
+        "training_seconds": 464.63095880000037,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.4",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed0.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed0.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/manifest.csv": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/manifest.csv"
+        },
+        "src/prepare_synthetic.py": {
+          "status": "match",
+          "path": "src/prepare_synthetic.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/leakage_report.json": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/leakage_report.json"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "135198fb7d85eb83f35cb317a9f9dd61901a7126ec15bc974e8dc6f467db2494",
+        "history.csv": "7cfa2d188a0ec810278a973ddffd3975b2f109610b9da8b206927f6a8f16e56a",
+        "runtime.json": "5f448a597be1d54a3cc1415808873f090aea63108b432863147662cbf1cdb160",
+        "val_metrics.json": "6433fd3eac6ae409bbc81e1f9cabe74c56abb4ff4d50fc4a775769d2fe48eb2b",
+        "val_per_class.json": "5f70c83451eff5aa207c3846eccf8c9daa3a704e432431f287c01ef67a4613ee",
+        "val_predictions.csv": "ce580a138d9d1c980ed1f28785321871a9a6a1f8e43daa91642c81f80285b5ed"
+      },
+      "training_command": "python src/train_classifier.py --seed 0 --k-shot 10 --synthetic-manifest reports/generation/prepared_sd15_wildlife_accepted/manifest.csv --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/accepted_synthetic_10shot_seed0"
+    },
+    {
+      "run": "standard_aug_10shot_seed1_t4",
+      "status": "passed",
+      "summary": {
+        "run": "standard_aug_10shot_seed1_t4",
+        "arm": "standard_aug",
+        "seed": 1,
+        "k_shot": 10,
+        "augment": true,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.5296090257781434,
+        "accuracy": 0.539,
+        "val_loss": 1.8298187866210938,
+        "best_step": 800,
+        "optimizer_steps": 1000,
+        "training_seconds": 403.8903420820001,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.15",
+        "torch": "2.11.0+cu128",
+        "torchvision": "0.26.0+cu128",
+        "sklearn": "1.6.1",
+        "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+        "gpu": "Tesla T4"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed1.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed1.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "a7c8d9c2f147c8a7b36f3430a3daa620cb474cde30a2f412b13511aaf7322b49",
+        "history.csv": "2aa7e64a99471297f4a8a0aafc2f1501b855e482ba07ebfaad1409ca6c308005",
+        "runtime.json": "9e602c3b0ac7cbb62827dfc7d052005f73a947987ebbcaab77d1f5d6b50b78bd",
+        "val_metrics.json": "880d0fe5815d2a993dd11faa71bfb76ec1e786be614b822b251d727cbbfffeb6",
+        "val_per_class.json": "47e7428abba25a4c4f230f6e5fe20f2efb9786863829ac3080681ac7f06ae1e3",
+        "val_predictions.csv": "9ee9f8d260fe529519d3d7cc761a5d7b2db61eba8bccb8931ac7111545b51b95"
+      },
+      "training_command": "python src/train_classifier.py --seed 1 --k-shot 10 --augment --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/standard_aug_10shot_seed1_t4"
+    },
+    {
+      "run": "accepted_synthetic_10shot_seed1",
+      "status": "passed",
+      "summary": {
+        "run": "accepted_synthetic_10shot_seed1",
+        "arm": "real_synthetic",
+        "seed": 1,
+        "k_shot": 10,
+        "augment": false,
+        "train_images": 3440,
+        "val_images": 1000,
+        "macro_f1": 0.530621319856614,
+        "accuracy": 0.539,
+        "val_loss": 1.8664706115722656,
+        "best_step": 800,
+        "optimizer_steps": 1000,
+        "training_seconds": 296.0583904000014,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.14.7",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "gpu": "NVIDIA GeForce RTX 3070"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed1.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed1.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/manifest.csv": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/manifest.csv"
+        },
+        "src/prepare_synthetic.py": {
+          "status": "match",
+          "path": "src/prepare_synthetic.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/leakage_report.json": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/leakage_report.json"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "69d5da942de91a78e37956ad5a55d6c0dd863837fc677627b458c74a879ee261",
+        "history.csv": "d9970f1468431c85760995a0a573ffed67187fb793e12b75a4c4a29ee8335e71",
+        "runtime.json": "56864873a0da745976d7b86fab4229308436c84a0b110e52d3383aa931c839ef",
+        "val_metrics.json": "3a746addd824531708e3efb6b691845c7b73b47b87e0827ac391980e90d60117",
+        "val_per_class.json": "638325f848e3e3e967a5c86e033a7ab5419101c73c05a806becddd98795556b0",
+        "val_predictions.csv": "715b3ff7ad928ac11dea7857710cbe21bd9e96616e8d7df06c9ec1494409031f"
+      },
+      "training_command": "python src/train_classifier.py --seed 1 --k-shot 10 --synthetic-manifest reports/generation/prepared_sd15_wildlife_accepted/manifest.csv --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/accepted_synthetic_10shot_seed1"
+    },
+    {
+      "run": "standard_aug_10shot_seed2_t4",
+      "status": "passed",
+      "summary": {
+        "run": "standard_aug_10shot_seed2_t4",
+        "arm": "standard_aug",
+        "seed": 2,
+        "k_shot": 10,
+        "augment": true,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.5403404511724945,
+        "accuracy": 0.545,
+        "val_loss": 1.7408106155395509,
+        "best_step": 1000,
+        "optimizer_steps": 1000,
+        "training_seconds": 404.10516600999995,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.15",
+        "torch": "2.11.0+cu128",
+        "torchvision": "0.26.0+cu128",
+        "sklearn": "1.6.1",
+        "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+        "gpu": "Tesla T4"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed2.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed2.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "3566cc46fe27d8388a9e7d2c5bdc4ffc9d9c5e73ff6c559e2a4bac00cef33e5e",
+        "history.csv": "9bb2bedc1b97fafcd198f9479afce3438649fa729c31c52f8f490f51dc7523b2",
+        "runtime.json": "5cc7ca1dc77626cb1ab8ea22768a0e1be9f416a6c99ee5a14941849349ead1ba",
+        "val_metrics.json": "484bd2161742d6ae9a78857921efb060df217d16e4062706acf107b600943987",
+        "val_per_class.json": "0ed0e510a06f253e95f2f90b7cee76a22f7eada7cd91fe963f0f160e011c0217",
+        "val_predictions.csv": "6116015b3a2ec3fa56e4d976bc22d9ed1922fef8d422e1df182d7a7b136e40df"
+      },
+      "training_command": "python src/train_classifier.py --seed 2 --k-shot 10 --augment --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/standard_aug_10shot_seed2_t4"
+    },
+    {
+      "run": "accepted_synthetic_10shot_seed2",
+      "status": "passed",
+      "summary": {
+        "run": "accepted_synthetic_10shot_seed2",
+        "arm": "real_synthetic",
+        "seed": 2,
+        "k_shot": 10,
+        "augment": false,
+        "train_images": 3440,
+        "val_images": 1000,
+        "macro_f1": 0.5189851404185769,
+        "accuracy": 0.522,
+        "val_loss": 1.8218213577270508,
+        "best_step": 900,
+        "optimizer_steps": 1000,
+        "training_seconds": 295.9099519999945,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.14.7",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "gpu": "NVIDIA GeForce RTX 3070"
+      },
+      "input_hashes": {
+        "splits/manifests/train_10shot_seed2.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_10shot_seed2.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/manifest.csv": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/manifest.csv"
+        },
+        "src/prepare_synthetic.py": {
+          "status": "match",
+          "path": "src/prepare_synthetic.py"
+        },
+        "data/synthetic/sd15_wildlife/prepared_accepted/leakage_report.json": {
+          "status": "match",
+          "path": "reports/generation/prepared_sd15_wildlife_accepted/leakage_report.json"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "afef37305f416be08737dd6a9ebc82bb0ec8a27be7648b6570caf6e9032d747b",
+        "history.csv": "fc04c81747928c1e6ae1cf79e4c74334e149151637064cd8e43ee477e85e2e0a",
+        "runtime.json": "43530dcb6f114bc63fe100fd9ac5489bcec8361e9845212963558f6cff035302",
+        "val_metrics.json": "5e11c43bb22ae1c7e021012753d7aacfea0d53f96bdf56a7e9cb2851f37893f1",
+        "val_per_class.json": "2c49dce457c1d7947592d3d51337a99c693108445f36f66f7a14733e450cd4fe",
+        "val_predictions.csv": "ede98349170834f82d2019e9c6320100f7f44f053e54786e2bc1bf42fc159c7e"
+      },
+      "training_command": "python src/train_classifier.py --seed 2 --k-shot 10 --synthetic-manifest reports/generation/prepared_sd15_wildlife_accepted/manifest.csv --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/accepted_synthetic_10shot_seed2"
+    },
+    {
+      "run": "baseline_20shot_seed0",
+      "status": "passed",
+      "summary": {
+        "run": "baseline_20shot_seed0",
+        "arm": "baseline",
+        "seed": 0,
+        "k_shot": 20,
+        "augment": false,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.6005583442465762,
+        "accuracy": 0.598,
+        "val_loss": 1.552996795654297,
+        "best_step": 1000,
+        "optimizer_steps": 1000,
+        "training_seconds": 623.4189030999987,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.4",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+      },
+      "input_hashes": {
+        "splits/manifests/train_20shot_seed0.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_20shot_seed0.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "9e0d6e55002f77675ed42fbb2f5daf55294c7da3858818d01c03cfa9630b4b96",
+        "history.csv": "8b3356a84b95418694b627c9014a00a390cfdb62fb78b1c171ecf3b6561eb57b",
+        "runtime.json": "5566c55e6e2eb4db678f43b31b94c6095186c52503fd2143c62e87dab9ffa8ee",
+        "val_metrics.json": "c159750fe1682901dd344450a77dcee56f32a61e0851a1223d1fa9027efc9072",
+        "val_per_class.json": "a462e1f3641167e736bb85752e4f158120bd136c41e7b9c3c90d20bde4fa42aa",
+        "val_predictions.csv": "682f65fa79379a2271549cceaa4a42b5502b4490a1ec6f598f977410848db29c"
+      },
+      "training_command": "python src/train_classifier.py --seed 0 --k-shot 20 --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/baseline_20shot_seed0"
+    },
+    {
+      "run": "baseline_20shot_seed1",
+      "status": "passed",
+      "summary": {
+        "run": "baseline_20shot_seed1",
+        "arm": "baseline",
+        "seed": 1,
+        "k_shot": 20,
+        "augment": false,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.6014984971169182,
+        "accuracy": 0.604,
+        "val_loss": 1.5602956619262696,
+        "best_step": 900,
+        "optimizer_steps": 1000,
+        "training_seconds": 560.627352800002,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.4",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+      },
+      "input_hashes": {
+        "splits/manifests/train_20shot_seed1.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_20shot_seed1.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "6d9eb8de18610166b5914ac5d59ad13234e6bda62ddea8b4e392b025ef5ae100",
+        "history.csv": "3632c2ec916ef0f05d79ae4628680af50ebd403eb8facfd0ee951d698258ddce",
+        "runtime.json": "f66e9805452ffc50098a81ddc3b65e4d2871238d0eadb5678b0b4f362151b814",
+        "val_metrics.json": "53900c77bd25fd17dd30640d762dee0fc014fc046c17ffc223d1f4ebedbfcd8b",
+        "val_per_class.json": "53ff56e617684b55d371170f94cb9942b47d98cecd9857e55afa93fd02d54036",
+        "val_predictions.csv": "a35e046633fc1973f9c6314e542c23d0c05d28495a839884749230126cdc3d4d"
+      },
+      "training_command": "python src/train_classifier.py --seed 1 --k-shot 20 --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/baseline_20shot_seed1"
+    },
+    {
+      "run": "baseline_20shot_seed2",
+      "status": "passed",
+      "summary": {
+        "run": "baseline_20shot_seed2",
+        "arm": "baseline",
+        "seed": 2,
+        "k_shot": 20,
+        "augment": false,
+        "train_images": 4000,
+        "val_images": 1000,
+        "macro_f1": 0.5887065395885728,
+        "accuracy": 0.591,
+        "val_loss": 1.544494499206543,
+        "best_step": 1000,
+        "optimizer_steps": 1000,
+        "training_seconds": 417.02503279999655,
+        "validated": true
+      },
+      "environment": {
+        "python": "3.13.4",
+        "torch": "2.14.1+cu130",
+        "torchvision": "0.29.1+cu130",
+        "sklearn": "1.9.1",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+      },
+      "input_hashes": {
+        "splits/manifests/train_20shot_seed2.csv": {
+          "status": "match",
+          "path": "splits/manifests/train_20shot_seed2.csv"
+        },
+        "splits/manifests/val.csv": {
+          "status": "match",
+          "path": "splits/manifests/val.csv"
+        },
+        "splits/manifests/test.csv": {
+          "status": "match",
+          "path": "splits/manifests/test.csv"
+        },
+        "splits/cub_splits.csv": {
+          "status": "match",
+          "path": "splits/cub_splits.csv"
+        },
+        "src/train_classifier.py": {
+          "status": "match",
+          "path": "src/train_classifier.py"
+        },
+        "src/classifier.py": {
+          "status": "match",
+          "path": "src/classifier.py"
+        },
+        "src/preprocessing.py": {
+          "status": "match",
+          "path": "src/preprocessing.py"
+        },
+        "src/synthetic_data.py": {
+          "status": "match",
+          "path": "src/synthetic_data.py"
+        }
+      },
+      "warnings": [],
+      "artifact_sha256": {
+        "config.json": "4955c1c57502129bcab3518df3253c4b98d1b3d01738724e45da8c0317d6b1e0",
+        "history.csv": "3e70b689ba68ebf8b0afaf384708b9020552f1ed23fc3954ed8f870eb4eadae2",
+        "runtime.json": "17c7876d230323b6e7570759cb9a5e5be1b981ab4a8fa26275b6971a37c83ce7",
+        "val_metrics.json": "2bfcbf9be9c0d76100686928a87b0e86d102c13557fa9a749b135c9775df5d5f",
+        "val_per_class.json": "e691e19faab6c5b18111aec317388528f970512b5a08a7a05a61828b3ec530e3",
+        "val_predictions.csv": "266f7ddc6ee02aa22129a45e3a66bc369fa696ab3201ecc071895d97a340a7f7"
+      },
+      "training_command": "python src/train_classifier.py --seed 2 --k-shot 20 --max-steps 1000 --eval-every 100 --log-every 10 --batch-size 64 --lr 0.001 --weight-decay 0.0001 --num-workers 0 --device cuda --amp --output outputs/reproduction/baseline_20shot_seed2"
+    }
+  ],
+  "missing_primary_runs": [
+    "baseline_10shot_seed1",
+    "baseline_10shot_seed2"
+  ],
+  "missing_reference_runs": [],
+  "splits": {
+    "images": {
+      "train": 4952,
+      "val": 1000,
+      "test": 5794
+    },
+    "classes": 200,
+    "dropped_duplicates": 42,
+    "manifest_sha256": {
+      "train.csv": "348d5bba7c198e34b71d2c04a681c7da253ca6f516cd248d3db1aa540bbabe3f",
+      "val.csv": "dbb1c1398a6d679f5bf01f7234982408de6684918fd796aba53dfb874798bfd4",
+      "test.csv": "27bb78115f171026db0ce528873945df3ebe46cecb890e84e3a804bad6b39823",
+      "train_5shot_seed0.csv": "bf85d88dc7696c854a1c6a81ecde5de1ad5262f2a04ae17af52fd8471747869d",
+      "train_10shot_seed0.csv": "5c7f253b8b24bbb91b580fde31a6900e390a3c5e63d14e289a16fe8e67459e20",
+      "train_20shot_seed0.csv": "54cc3919cf429014077c8780b2c48c894f6e5942da115e7428a0ae46dab685fa",
+      "train_5shot_seed1.csv": "684259acef737a324fcf0db696dcec33f788a052260186121ab522fe91f3651f",
+      "train_10shot_seed1.csv": "9f21e6b7444630aead0ed402ebc10d9165408f70954fbbc8175c18cc496f5917",
+      "train_20shot_seed1.csv": "565f80a0ec1cadf1647481b520ffd52742cd4bc63af1c08d09ee31175f26687d",
+      "train_5shot_seed2.csv": "88d1658f9dc0ca36de055a987a12d32f02be04d1e1707b216ce9f0b598cabfd3",
+      "train_10shot_seed2.csv": "413cf8a234c6fd7ad8cf406a2ff2e03a468fc3c76ae7f4607352856d254e72ca",
+      "train_20shot_seed2.csv": "1024ad65e52bfd1cfd281a6d9d78ebccbf1785d66ef8c50bb7b94c330a3e658d"
+    }
+  },
+  "primary_complete": false,
+  "limitations": [
+    "Checkpoints in shared storage were not inspected; best_step is verified from history, not best.pt",
+    "Image pixels and embedding/MD5 leakage detection were not rerun; only saved IDs, hashes and records were checked",
+    "Loss is checked against history; predictions contain no logits to recompute cross-entropy",
+    "Hardware/software differ between runs; identical seeds do not establish bitwise GPU reproducibility",
+    "Historical baseline source needs the recorded Git snapshot for an exact source replay"
+  ],
+  "status": "passed_with_limitations"
+}
