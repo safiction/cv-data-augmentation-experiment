@@ -62,6 +62,15 @@ class StandardAugmentationTests(unittest.TestCase):
             rebuilt = get_dataset("train", augment=True, seed=0)
         self.assertTrue(torch.equal(first, rebuilt[2]["pixel_values"]))
 
+    def test_fixed_views_and_shuffled_order_match_across_worker_counts(self):
+        # Exercise actual worker processes; the four entries include both view types.
+        batches = [list(get_loader("train", augment=True, seed=1, batch_size=3,
+                                   num_workers=workers)) for workers in (0, 2)]
+        for single, multi in zip(*batches):
+            self.assertEqual(single["image_id"], multi["image_id"])
+            self.assertTrue(torch.equal(single["label"], multi["label"]))
+            self.assertTrue(torch.equal(single["pixel_values"], multi["pixel_values"]))
+
     def test_full_image_control_retains_only_originals_and_preserves_edges(self):
         control = get_dataset("train", full_image=True)
         comparison = get_dataset("train", augment=True)

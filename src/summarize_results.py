@@ -40,7 +40,7 @@ def close(actual, expected):
     return math.isclose(float(actual), float(expected), rel_tol=0.0, abs_tol=1e-12)
 
 
-def validate_run(run_dir, config, metrics, runtime):
+def validate_run(run_dir, config, metrics, runtime, project_root=None):
     names = config["class_names"]
     if len(names) != 200 or len(set(names)) != 200:
         raise ValueError(f"{run_dir}: expected 200 unique class names")
@@ -48,7 +48,7 @@ def validate_run(run_dir, config, metrics, runtime):
     predictions = read_csv(run_dir / "val_predictions.csv")
     history = read_csv(run_dir / "history.csv")
     per_class = read_json(run_dir / "val_per_class.json")
-    project_root = Path(__file__).resolve().parents[1]
+    project_root = Path(project_root) if project_root is not None else Path(__file__).resolve().parents[1]
     manifest = read_csv(project_root / "splits" / "manifests" / "val.csv")
 
     if len(predictions) != len(manifest) or len(predictions) != metrics["images"]:
@@ -103,7 +103,7 @@ def validate_run(run_dir, config, metrics, runtime):
         raise ValueError(f"{run_dir}: best history row does not match saved metrics")
 
 
-def collect_run(run_dir):
+def collect_run(run_dir, project_root=None):
     required = [
         "config.json", "history.csv", "runtime.json", "val_metrics.json",
         "val_per_class.json", "val_predictions.csv",
@@ -115,7 +115,7 @@ def collect_run(run_dir):
     config = read_json(run_dir / "config.json")
     metrics = read_json(run_dir / "val_metrics.json")
     runtime = read_json(run_dir / "runtime.json")
-    validate_run(run_dir, config, metrics, runtime)
+    validate_run(run_dir, config, metrics, runtime, project_root=project_root)
     return {
         "run": run_dir.name,
         "arm": config["arm"],

@@ -19,3 +19,8 @@ Each run directory contains its configuration, training history, runtime, valida
 - `archive/` contains superseded or historical seed-0 runs retained for reference. They are excluded from `results_summary.csv`.
 
 Adding a result directory records the artifact in Git; it does not imply that the committer trained the model. Experiment ownership follows the table above and the project plan.
+
+The [3 November reproducibility audit](../../docs/reproducibility.md) verifies these ten
+available runs against saved manifests, source hashes, predictions and training history.
+Run `python src/check_reproducibility.py` from the repository root to repeat it.
+Missing 10-shot baselines and external-checkpoint verification remain explicit limitations.

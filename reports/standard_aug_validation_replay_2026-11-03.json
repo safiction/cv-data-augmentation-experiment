@@ -1,0 +1,141 @@
+{
+  "scope": "CPU validation inference from the three original standard-augmentation checkpoints; no retraining or test scoring",
+  "date": "2026-11-02",
+  "environment": {
+    "python": "3.13.5",
+    "torch": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "pillow": "11.1.0",
+    "datasets": "5.0.0",
+    "numpy": "2.1.3",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "device": "cpu",
+    "OMP_NUM_THREADS": 2,
+    "MKL_NUM_THREADS": 2
+  },
+  "runs": [
+    {
+      "run": "standard_aug_10shot_seed0_t4",
+      "checkpoint_sha256": "4a2f884e44b7d25b4d2285aa4ed861e97639198e3b8a3042b20844be5d7d39de",
+      "checkpoint_config_matches": true,
+      "checkpoint_step": 900,
+      "checkpoint_selection_matches": true,
+      "saved_metrics": {
+        "loss": 1.8327215576171876,
+        "accuracy": 0.537,
+        "macro_f1": 0.5353114147290617,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.8317315521240234,
+        "accuracy": 0.537,
+        "macro_f1": 0.5352482834159304,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": -0.006313131313129272,
+      "accuracy_delta_pp": 0.0,
+      "matching_predictions": 999,
+      "different_predictions": [
+        {
+          "image_id": "training/084.Red_legged_Kittiwake/Red_Legged_Kittiwake_0069_795435",
+          "label": 83,
+          "saved_prediction": 64,
+          "cpu_prediction": 143
+        }
+      ],
+      "saved_predictions_sha256": "4deff0ca58a54b27f62739d83cfe2ccfc04301fc69395f6e1ae98f1f8dda0066",
+      "cpu_predictions_sha256": "fbcfc17e414f1ede4b3bb313df80010571ec1aa1ba4d276fadd9a0e9e7af2f76",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed0/best.pt --split val --device cpu --output outputs/reproducibility_val_seed0"
+    },
+    {
+      "run": "standard_aug_10shot_seed1_t4",
+      "checkpoint_sha256": "1529aa66a666479e71a641f0c0a20a4d556b81523a03867d463a2b8d93be94a3",
+      "checkpoint_config_matches": true,
+      "checkpoint_step": 800,
+      "checkpoint_selection_matches": true,
+      "saved_metrics": {
+        "loss": 1.8298187866210938,
+        "accuracy": 0.539,
+        "macro_f1": 0.5296090257781434,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.8300663566589355,
+        "accuracy": 0.539,
+        "macro_f1": 0.5295338623794507,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": -0.0075163398692734695,
+      "accuracy_delta_pp": 0.0,
+      "matching_predictions": 999,
+      "different_predictions": [
+        {
+          "image_id": "training/117.Clay_colored_Sparrow/Clay_Colored_Sparrow_0071_110656",
+          "label": 116,
+          "saved_prediction": 125,
+          "cpu_prediction": 196
+        }
+      ],
+      "saved_predictions_sha256": "9ee9f8d260fe529519d3d7cc761a5d7b2db61eba8bccb8931ac7111545b51b95",
+      "cpu_predictions_sha256": "76bc7ad9ce746e83071d1ee5c83af4ffeab2a4cffcc46ec5e8143b8b48235e25",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed1/best.pt --split val --device cpu --output outputs/reproducibility_val_seed1"
+    },
+    {
+      "run": "standard_aug_10shot_seed2_t4",
+      "checkpoint_sha256": "863ba00fafa9c31b4f2ec8a7f93ae9e3594d832c0b719c9c7c56640d4c48cf48",
+      "checkpoint_config_matches": true,
+      "checkpoint_step": 1000,
+      "checkpoint_selection_matches": true,
+      "saved_metrics": {
+        "loss": 1.7408106155395509,
+        "accuracy": 0.545,
+        "macro_f1": 0.5403404511724945,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.7413950958251954,
+        "accuracy": 0.546,
+        "macro_f1": 0.5415166565460683,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": 0.11762053735737688,
+      "accuracy_delta_pp": 0.10000000000000009,
+      "matching_predictions": 997,
+      "different_predictions": [
+        {
+          "image_id": "training/049.Boat_tailed_Grackle/Boat_Tailed_Grackle_0027_33743",
+          "label": 48,
+          "saved_prediction": 81,
+          "cpu_prediction": 68
+        },
+        {
+          "image_id": "training/120.Fox_Sparrow/Fox_Sparrow_0035_114866",
+          "label": 119,
+          "saved_prediction": 128,
+          "cpu_prediction": 119
+        },
+        {
+          "image_id": "training/178.Swainson_Warbler/Swainson_Warbler_0041_794893",
+          "label": 177,
+          "saved_prediction": 152,
+          "cpu_prediction": 167
+        }
+      ],
+      "saved_predictions_sha256": "6116015b3a2ec3fa56e4d976bc22d9ed1922fef8d422e1df182d7a7b136e40df",
+      "cpu_predictions_sha256": "bc05536d52ef6f666b60c22fe8fdf95a27eb8e86b5cfc5ac6745054c26269826",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed2/best.pt --split val --device cpu --output outputs/reproducibility_val_seed2"
+    }
+  ],
+  "validation_data_sha256": {
+    "data/processed/cub_200_2011/val/data-00000-of-00001.arrow": "03c690eae7032b79e2d8cbeb3a9d02be4dc65af5838baafdf56303a535651f3b",
+    "data/processed/cub_200_2011/val/dataset_info.json": "35805f6d7a44564f73746bf5cd30174dd094b8922e025fe5e458d1954027d278",
+    "data/processed/cub_200_2011/val/state.json": "1ad0deca6816547958d7615d9bf2feb18ccc9ecf2a8cbf624dc13c9b36982854"
+  },
+  "validation_data_matches_kaggle_input_snapshot": true,
+  "status": "prediction_drift_observed",
+  "limitations": [
+    "The cause of the differences is unresolved; inference moved from the recorded T4/CUDA environment to CPU",
+    "Pillow and datasets versions were not recorded for the original runs, so the complete decoding environment cannot be matched",
+    "No exact T4 environment replay or full training replay was performed; original T4 results remain unchanged"
+  ]
+}
