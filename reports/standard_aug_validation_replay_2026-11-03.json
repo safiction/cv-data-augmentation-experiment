@@ -134,8 +134,15 @@
   "validation_data_matches_kaggle_input_snapshot": true,
   "status": "prediction_drift_observed",
   "limitations": [
-    "The cause of the differences is unresolved; inference moved from the recorded T4/CUDA environment to CPU",
+    "This initial mismatch was resolved by changing only the Pillow package/build; see the resolution report",
     "Pillow and datasets versions were not recorded for the original runs, so the complete decoding environment cannot be matched",
     "No exact T4 environment replay or full training replay was performed; original T4 results remain unchanged"
-  ]
+  ],
+  "resolution": {
+    "status": "resolved",
+    "report": "reports/standard_aug_validation_replay_pillow12_2026-11-03.json",
+    "change": "Use Pillow 12.2.0 instead of 11.1.0",
+    "matching_predictions_after_fix": 3000,
+    "total_predictions": 3000
+  }
 }

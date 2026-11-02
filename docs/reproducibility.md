@@ -23,14 +23,24 @@ with status 1 until all nine primary runs are present and valid. It currently fa
 the two missing 10-shot baselines, seeds 1 and 2. This flag checks artifact completeness;
 it does not verify external checkpoints or authorize final test evaluation.
 
-Run the pipeline regression checks in the project environment:
+For CPU replay and regression checks, create a Python 3.13 environment and install the
+validated dependencies. Pillow is pinned because changing its package/build changed
+five validation predictions in the initial local environment:
 
 ```bash
-python -m pip install -r requirements.txt
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-replay.txt
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q -W error
 ```
 
-The thread settings bound CPU use on Linux/macOS; on Windows run `python -m pytest -q`.
+On Windows, activate `.venv\Scripts\Activate.ps1`, set those environment variables in
+PowerShell and run `python -m pytest -q -W error`. The thread settings bound CPU use;
+disabling plugin autoload isolates the tests from unrelated globally installed plugins.
+Worker tests explicitly use `spawn` to avoid forking a multithreaded PyTorch process.
+The fixture selects the GNU MKL threading layer so Conda workers share PyTorch's OpenMP
+runtime. The validated run completed with **82 passed, no skips and no warnings** under
+`-W error`.
 Tests run without downloads. Seven real-image checks are skipped if the processed data is
 absent; to enable them, first run `python src/load_data.py`. They inspect loader behavior
 and image transforms without computing test scores. The in-memory image fixture also
@@ -97,39 +107,48 @@ Use the current checkout for the other commands, whose recorded training-source 
 match it. The old snapshot has different loader/config bookkeeping, so a current-code
 baseline rerun must be identified as a new run.
 
-## CPU validation replay of Artem's checkpoints
+## CPU validation replay of Artem's checkpoints — resolved
 
 All three original standard-augmentation `best.pt` files were available locally. Their
 embedded configurations, selected steps and validation-selection scores match the tracked
 T4 artifacts. Validation was evaluated again on CPU using `src/evaluate_classifier.py`.
 The local validation Arrow data and metadata have identical SHA-256 hashes to the submitted
-Kaggle input snapshot. The checkpoint hashes, environment, commands and every differing
-image ID are recorded in
-[`reports/standard_aug_validation_replay_2026-11-03.json`](../reports/standard_aug_validation_replay_2026-11-03.json).
+Kaggle input snapshot. The checkpoint hashes, environment, commands and prediction
+comparisons are recorded in
+[`reports/standard_aug_validation_replay_pillow12_2026-11-03.json`](../reports/standard_aug_validation_replay_pillow12_2026-11-03.json).
 
 | Seed | Matching predictions | CPU macro F1 | Change from saved T4 macro F1 |
 | --- | ---: | ---: | ---: |
-| 0 | 999 / 1,000 | 53.5248% | −0.0063 pp |
-| 1 | 999 / 1,000 | 52.9534% | −0.0075 pp |
-| 2 | 997 / 1,000 | 54.1517% | +0.1176 pp |
+| 0 | 1,000 / 1,000 | 53.5311% | 0 pp |
+| 1 | 1,000 / 1,000 | 52.9609% | 0 pp |
+| 2 | 1,000 / 1,000 | 54.0340% | 0 pp |
 
-Accuracy remains 53.7% and 53.9% for seeds 0 and 1; seed 2 changes from 54.5% to 54.6%.
-The replay therefore **does not reproduce all T4 predictions exactly**. The cause remains
-unresolved. The original runs used CUDA on T4; this replay used CPU. Pillow/datasets
-versions were not saved for the original runs, preventing full environment matching.
-The saved T4 results remain the comparison results; CPU replay scores are a diagnostic.
+All **3,000 predictions**, accuracy, macro F1 and every per-class metric match the original
+T4 results exactly. Accuracy is 53.7%, 53.9% and 54.5%. The maximum absolute loss difference
+is `1.38e-7`, within the recorded `1e-6` tolerance for CPU/T4 floating-point reductions.
+
+The initial Pillow 11.1.0 environment produced 1/1/3 different predictions. Replacing
+only the Pillow package/build with 12.2.0 on the same CPU resolved all five differences;
+checkpoints, image data and preprocessing source stayed identical. The initial evidence
+is preserved in
+[`reports/standard_aug_validation_replay_2026-11-03.json`](../reports/standard_aug_validation_replay_2026-11-03.json),
+with a link to the resolution. `requirements.txt` now pins Pillow 12.2.0 and
+`requirements-replay.txt` records the complete set of direct replay/check dependencies.
+The precise original T4 decoding environment is unknown because its Pillow version was
+not logged; the corrected environment is validated by the complete prediction comparison.
 
 To repeat after restoring the checkpoint archive under `outputs/kaggle_standard_aug/runs/`:
 
 ```bash
-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed0/best.pt --split val --device cpu --output outputs/reproducibility_val_seed0
+OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed0/best.pt --split val --device cpu --output outputs/reproducibility_pillow12_seed0
 ```
 
 Repeat for seeds 1 and 2, choosing fresh output directories. Compare the resulting
 `val_predictions.csv` files with `reports/classifier/standard_aug_10shot_seed{seed}_t4/`.
 The local replay environment was Python 3.13 with the versions listed in the JSON report.
-For an exact replay claim, repeat in the original T4 environment and investigate any
-remaining prediction differences before relying on the exported test predictions.
+Prediction CSVs must agree exactly; compare loss with the documented tolerance. This
+confirms inference replay for these checkpoints, while training reproducibility remains
+outside this verification.
 
 ## Limits and handoff
 
@@ -143,8 +162,8 @@ or repeat image-level MD5/embedding leakage detection. Saved IDs, hashes and lea
 records are consistent; that does not prove image-pixel integrity in an external archive.
 Hardware/software records also differ across runs (T4, RTX 4060 Laptop and RTX 3070;
 different Python/PyTorch/torchvision versions). `requirements.txt` has no exact environment
-lock. Stored versions support environment reconstruction, but equal seeds alone do not
-guarantee identical GPU results across these environments.
+lock for the original training runs. The new replay requirements pin the validated direct
+dependencies. Equal seeds alone do not guarantee identical GPU results across these environments.
 
 Before final test evaluation, the checkpoint owner should finish the missing runs,
 compare paired validation results, freeze the choices, restore all selected checkpoints,

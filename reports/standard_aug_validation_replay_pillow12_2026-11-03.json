@@ -1,0 +1,104 @@
+{
+  "scope": "CPU validation replay with pinned Pillow; original T4 checkpoints and comparison results unchanged",
+  "date": "2026-11-02",
+  "status": "exact_predictions_reproduced",
+  "environment": {
+    "python": "3.13.5",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "device": "cpu",
+    "torch": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "pillow": "12.2.0",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.6.1",
+    "datasets": "5.0.0",
+    "OMP_NUM_THREADS": 2,
+    "MKL_NUM_THREADS": 2
+  },
+  "initial_diagnostic": "reports/standard_aug_validation_replay_2026-11-03.json",
+  "loss_absolute_tolerance": 1e-06,
+  "runs": [
+    {
+      "run": "standard_aug_10shot_seed0_t4",
+      "checkpoint_sha256": "4a2f884e44b7d25b4d2285aa4ed861e97639198e3b8a3042b20844be5d7d39de",
+      "checkpoint_step": 900,
+      "matching_predictions": 1000,
+      "different_predictions": [],
+      "per_class_metrics_match": true,
+      "saved_metrics": {
+        "loss": 1.8327215576171876,
+        "accuracy": 0.537,
+        "macro_f1": 0.5353114147290617,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.832721694946289,
+        "accuracy": 0.537,
+        "macro_f1": 0.5353114147290617,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": 0.0,
+      "accuracy_delta_pp": 0.0,
+      "loss_absolute_difference": 1.3732910142394417e-07,
+      "predictions_sha256": "4deff0ca58a54b27f62739d83cfe2ccfc04301fc69395f6e1ae98f1f8dda0066",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed0/best.pt --split val --device cpu --output outputs/reproducibility_pillow12_seed0"
+    },
+    {
+      "run": "standard_aug_10shot_seed1_t4",
+      "checkpoint_sha256": "1529aa66a666479e71a641f0c0a20a4d556b81523a03867d463a2b8d93be94a3",
+      "checkpoint_step": 800,
+      "matching_predictions": 1000,
+      "different_predictions": [],
+      "per_class_metrics_match": true,
+      "saved_metrics": {
+        "loss": 1.8298187866210938,
+        "accuracy": 0.539,
+        "macro_f1": 0.5296090257781434,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.829818904876709,
+        "accuracy": 0.539,
+        "macro_f1": 0.5296090257781434,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": 0.0,
+      "accuracy_delta_pp": 0.0,
+      "loss_absolute_difference": 1.182556153001002e-07,
+      "predictions_sha256": "9ee9f8d260fe529519d3d7cc761a5d7b2db61eba8bccb8931ac7111545b51b95",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed1/best.pt --split val --device cpu --output outputs/reproducibility_pillow12_seed1"
+    },
+    {
+      "run": "standard_aug_10shot_seed2_t4",
+      "checkpoint_sha256": "863ba00fafa9c31b4f2ec8a7f93ae9e3594d832c0b719c9c7c56640d4c48cf48",
+      "checkpoint_step": 1000,
+      "matching_predictions": 1000,
+      "different_predictions": [],
+      "per_class_metrics_match": true,
+      "saved_metrics": {
+        "loss": 1.7408106155395509,
+        "accuracy": 0.545,
+        "macro_f1": 0.5403404511724945,
+        "images": 1000
+      },
+      "cpu_metrics": {
+        "loss": 1.740810661315918,
+        "accuracy": 0.545,
+        "macro_f1": 0.5403404511724945,
+        "images": 1000
+      },
+      "macro_f1_delta_pp": 0.0,
+      "accuracy_delta_pp": 0.0,
+      "loss_absolute_difference": 4.577636714131472e-08,
+      "predictions_sha256": "6116015b3a2ec3fa56e4d976bc22d9ed1922fef8d422e1df182d7a7b136e40df",
+      "replay_command": "OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python src/evaluate_classifier.py outputs/kaggle_standard_aug/runs/standard_aug_10shot_seed2/best.pt --split val --device cpu --output outputs/reproducibility_pillow12_seed2"
+    }
+  ],
+  "diagnosis": "Replacing only the Pillow package/build (11.1.0 to 12.2.0) on the same CPU reproduced all 3000 original T4 class predictions. No checkpoint, image archive or preprocessing source was changed.",
+  "limitations": [
+    "Full retraining and baseline/synthetic checkpoint inference were not performed",
+    "Original T4 Pillow version was not recorded; the fix establishes a validated replay environment, not its exact reconstruction",
+    "Loss differs by at most 1.4e-7 between CPU and T4; class predictions, accuracy, macro F1 and all per-class metrics agree exactly"
+  ]
+}

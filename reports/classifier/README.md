@@ -24,3 +24,5 @@ The [3 November reproducibility audit](../../docs/reproducibility.md) verifies t
 available runs against saved manifests, source hashes, predictions and training history.
 Run `python src/check_reproducibility.py` from the repository root to repeat it.
 Missing 10-shot baselines and external-checkpoint verification remain explicit limitations.
+The three standard-augmentation checkpoints were also replayed on CPU with Pillow 12.2.0:
+all 3,000 validation predictions and per-class metrics match the saved T4 results exactly.

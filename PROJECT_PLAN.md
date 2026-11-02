@@ -91,7 +91,8 @@ Each member analyzes one test failure, writes their report section, and rehearse
 audit validates all ten available comparison runs (seven primary and three 20-shot
 references), split/subset manifests, recorded source/input hashes, prediction-derived
 metrics and checkpoint selection from history. Baseline 10-shot seeds 1–2 are still
-missing. CPU validation replay of the three standard-augmentation checkpoints found
-1/1/3 prediction differences per 1,000 images versus T4; exact replay remains unresolved.
+missing. Pinning Pillow 12.2.0 resolved the initial CPU/T4 decoding/preprocessing
+differences: all 3,000 standard-augmentation predictions and per-class metrics now match
+the original T4 results; loss differs by at most `1.38e-7`.
 Baseline/synthetic checkpoint inference and full retraining were not verified.
 Commands, evidence and handoff: [docs/reproducibility.md](docs/reproducibility.md).
