@@ -54,6 +54,7 @@ subsets and initialization, not differences between generated pools.
 | `splits/manifests/synthetic_{pool}_accepted.csv` | training pool: first 10 accepted images per species (`--select 10`) | yes |
 | `reports/generation/review_{pool}.csv` | review decisions | yes |
 | `reports/generation/leakage_{pool}.json` | synthetic images matching val/test | yes |
+| `reports/generation/generation_records*` | cost and quality records of all pools (`report_generation.py`) | yes |
 
 Synthetic manifests start with the same three columns as the real ones, and image ids follow the
 same pattern (`synthetic/{pool}/{class_name}/{species}_{index:04d}` vs.
@@ -148,7 +149,8 @@ Images with the right species are `ok` + `artifact`, out of 25 per group:
 | median time per image (RTX 3070, fp16) | 2.16 s | 2.18 s |
 
 - **Cost:** ~2.2 s per image on an RTX 3070, ~72 min estimated for 2,000 images. The full pool
-  `sd15_wildlife` took 97 min (median 2.9 s per image).
+  `sd15_wildlife` took 96.6 min, the sum of per-image times without model loading (median 2.9 s
+  per image, 4.0 s per accepted image).
 - **Fidelity:** hard species were not worse than distinctive ones; Painted Bunting had the most
   wrong-species images (2 of 5 with both templates). California Gull with `photo` had no `ok` image.
 - **Template:** `wildlife`, with half the wrong-species images of `photo`. The full pool is `sd15_wildlife`.
@@ -188,11 +190,22 @@ Agreed by the team after the pilot.
 ### Review results
 
 The full pool `sd15_wildlife` (2,000 images) was reviewed by two people: `ok` 1,120, `artifact` 320,
-`wrong_species` 536, `not_a_bird` 24. Species 101–153 were reviewed by both; the decisions differed
-for 260 of 530 images, mostly `ok` vs. `wrong_species`, so the line between them is subjective.
-1,440 images were accepted (`ok` + `artifact`) and none matched val/test. 82 species keep all 10
-images, 118 fewer, 15 none. The prepared manifest is in
+`wrong_species` 536, `not_a_bird` 24. `review_sd15_wildlife.csv` holds the
+final decisions. 1,440 images were accepted (`ok` + `artifact`) and none matched val/test. 82
+species keep all 10 images, 118 fewer, 15 none. The prepared manifest is in
 [reports/generation/prepared_sd15_wildlife_accepted/](../reports/generation/prepared_sd15_wildlife_accepted/).
+
+### Cost and quality records
+
+`src/report_generation.py` checks the manifests, review tables, leakage reports and prepared pool
+against each other and writes the final records: cost and decisions per pool, decisions and
+accepted counts per species, pilot fidelity and training-pool coverage.
+
+```bash
+python src/report_generation.py --prepared reports/generation/prepared_sd15_wildlife_accepted --output-prefix reports/generation/generation_records
+```
+
+Report: [reports/generation/generation_records.md](../reports/generation/generation_records.md).
 
 ## Training results
 

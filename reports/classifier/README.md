@@ -10,6 +10,7 @@ This directory stores small, reproducible validation artifacts. Model checkpoint
 | `baseline_20shot_seed{0,1,2}` | Real-only, 20-shot | Karina |
 | `standard_aug_10shot_seed{0,1,2}_t4` | Standard augmentation, 10-shot | Artem, per the project plan and supplied archive |
 | `accepted_synthetic_10shot_seed0` | Reviewed synthetic augmentation, seed 0 | Karina |
+| `accepted_synthetic_20shot_seed{0,1,2}` | Reviewed synthetic augmentation, 20-shot (4,000 real + 1,440 synthetic) | Safina |
 | `accepted_synthetic_10shot_seed{1,2}` | Reviewed synthetic augmentation, seeds 1–2 | Safina |
 
 Each run directory contains its configuration, training history, runtime, validation metrics, per-class metrics and image-level predictions. The files allow metrics and checkpoint selection to be checked without retraining.

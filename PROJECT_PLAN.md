@@ -33,9 +33,11 @@ Validation and test contain only real images, so evaluation measures performance
 
 **Reviewed pool — update, 26 October 2026:** retain `ok` (1,120) and `artifact` (320; correct species with visual defects) images, up to 10 per species. Keep available accepted images when fewer than 10 remain. Counts vary by species, including species with none; additional generation is postponed. Reuse this fixed pool across seeds.
 
-**Budget — update, 26 October 2026:** the primary comparison remains **9 runs** (three approaches × three paired seeds); **7 are complete**, with 10-shot real-only seeds 1 and 2 remaining. The additional 20-shot real-only comparison comprises **3 completed runs**, for **12 planned comparison runs in total**. Earlier diagnostic runs and repeated runs are tracked separately. Pair real subsets and classifier initialization across the primary approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reusing one synthetic pool means seed variability does not measure variability between generated pools.
+**Budget — update, 26 October 2026:** the primary comparison remains **9 runs** (three approaches × three paired seeds); **7 are complete**, with 10-shot real-only seeds 1 and 2 remaining. The additional 20-shot real-only comparison comprises **3 completed runs**, for **12 planned comparison runs in total**. Earlier diagnostic runs and repeated runs are tracked separately. Pair real subsets and classifier initialization across the primary approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reusing one synthetic pool means seed variability does not measure variability between generated pools. 10-shot real-only seeds 1 and 2 are trained, completing the 9-run primary comparison. With the 3 runs of 20-shot reviewed synthetic below, the total is **15 comparison runs**.
 
 **20-shot reference — update, 26 October 2026:** compare against real-only training on 4,000 real images (20 per species), seeds 0–2. This measures performance with more real data and does not replace the matched 10-shot baseline or isolate the effect of augmentation.
+
+**20-shot reviewed synthetic — update:** real + reviewed synthetic training at 20 shots, seeds 0–2: the 4,000 real images of the 20-shot reference plus the same 1,440 accepted synthetic images (5,440 entries). All training settings match the other runs. Paired with the 20-shot real-only reference, it shows whether the effect of synthetic images persists with more real data. The synthetic-to-real ratio falls to 0.36:1, half the 10-shot ratio, so shot count and ratio change together and neither effect is isolated. Validation artifacts: `reports/classifier/accepted_synthetic_20shot_seed{0,1,2}`.
 
 **Preprocessing control:** an additional real-only run uses the same 2,000-image subset with
 direct full-image resizing to 224 x 224 for training and no added images. All training settings
@@ -82,8 +84,6 @@ Select checkpoints on validation macro F1. **Update — 26 October 2026:** compl
 | **27 Oct** | Complete three real-only runs | Complete three standard-augmentation runs | Complete three synthetic-augmentation runs | Compare validation results; list remaining experiments |
 | **3 Nov** | Freeze checkpoints; export test predictions | Verify reproducibility | Finalize generation quality/cost records | Final test metrics, runtime tables, figures |
 | **10 Nov** | Classifier section/slides; demo | Data section/slides; README/environment | Generation section/slides; assemble presentation | Evaluation section/slides; edit two-page summary |
-
-**Schedule update — 26 October 2026:** complete 10-shot real-only seeds 1 and 2 by **3 November**, before final test evaluation. Proposed owner: **Karina**, consistent with the real-only training responsibility, pending team confirmation. Arina will compare the completed paired validation results before the team freezes experimental choices and checkpoints.
 
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
 

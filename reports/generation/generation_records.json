@@ -1,0 +1,141 @@
+{
+  "timing_scope": "Pipeline call per image, batch size 1; excludes model download and loading",
+  "pools": [
+    {
+      "pool": "pilot_photo",
+      "template": "photo",
+      "images": 50,
+      "species": 10,
+      "gpu": "NVIDIA GeForce RTX 3070",
+      "dtype": "float16",
+      "scheduler": "DPMSolverMultistepScheduler",
+      "steps": 25,
+      "guidance": 7.5,
+      "size": 512,
+      "batch_size": 1,
+      "median_seconds_per_image": 2.1574999999999998,
+      "mean_seconds_per_image": 2.16666,
+      "total_minutes": 1.8055499999999998,
+      "ok": 34,
+      "wrong_species": 6,
+      "artifact": 10,
+      "not_a_bird": 0,
+      "leak": 0,
+      "accepted": 44,
+      "accepted_share": 0.88,
+      "seconds_per_accepted_image": 2.462113636363636,
+      "val_matches": 0,
+      "test_matches": 0
+    },
+    {
+      "pool": "pilot_wildlife",
+      "template": "wildlife",
+      "images": 50,
+      "species": 10,
+      "gpu": "NVIDIA GeForce RTX 3070",
+      "dtype": "float16",
+      "scheduler": "DPMSolverMultistepScheduler",
+      "steps": 25,
+      "guidance": 7.5,
+      "size": 512,
+      "batch_size": 1,
+      "median_seconds_per_image": 2.175,
+      "mean_seconds_per_image": 2.17998,
+      "total_minutes": 1.81665,
+      "ok": 36,
+      "wrong_species": 3,
+      "artifact": 11,
+      "not_a_bird": 0,
+      "leak": 0,
+      "accepted": 47,
+      "accepted_share": 0.94,
+      "seconds_per_accepted_image": 2.3191276595744683,
+      "val_matches": 0,
+      "test_matches": 0
+    },
+    {
+      "pool": "sd15_wildlife",
+      "template": "wildlife",
+      "images": 2000,
+      "species": 200,
+      "gpu": "NVIDIA GeForce RTX 3070",
+      "dtype": "float16",
+      "scheduler": "DPMSolverMultistepScheduler",
+      "steps": 25,
+      "guidance": 7.5,
+      "size": 512,
+      "batch_size": 1,
+      "median_seconds_per_image": 2.895,
+      "mean_seconds_per_image": 2.8968344999999998,
+      "total_minutes": 96.56115,
+      "ok": 1120,
+      "wrong_species": 536,
+      "artifact": 320,
+      "not_a_bird": 24,
+      "leak": 0,
+      "accepted": 1440,
+      "accepted_share": 0.72,
+      "seconds_per_accepted_image": 4.02338125,
+      "val_matches": 0,
+      "test_matches": 0
+    }
+  ],
+  "pilot_fidelity": [
+    {
+      "pool": "pilot_photo",
+      "group": "distinctive",
+      "images": 25,
+      "right_species": 21,
+      "ok": 19
+    },
+    {
+      "pool": "pilot_photo",
+      "group": "hard",
+      "images": 25,
+      "right_species": 23,
+      "ok": 15
+    },
+    {
+      "pool": "pilot_wildlife",
+      "group": "distinctive",
+      "images": 25,
+      "right_species": 23,
+      "ok": 19
+    },
+    {
+      "pool": "pilot_wildlife",
+      "group": "hard",
+      "images": 25,
+      "right_species": 24,
+      "ok": 17
+    }
+  ],
+  "training_pool": {
+    "pool": "sd15_wildlife",
+    "target_per_species": 10,
+    "images": 1440,
+    "species_with_images": 185,
+    "by_selected_count": [
+      {
+        "selected_per_species": "0",
+        "species": 15,
+        "images": 0
+      },
+      {
+        "selected_per_species": "1-5",
+        "species": 39,
+        "images": 127
+      },
+      {
+        "selected_per_species": "6-9",
+        "species": 64,
+        "images": 493
+      },
+      {
+        "selected_per_species": "10",
+        "species": 82,
+        "images": 820
+      }
+    ]
+  }
+}
