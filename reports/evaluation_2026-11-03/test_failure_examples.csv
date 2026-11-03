@@ -1,0 +1,4 @@
+image_id,true_species,baseline_correct_seeds,synthetic_prediction_seed0,synthetic_prediction_seed1,synthetic_prediction_seed2
+validation/002.Laysan_Albatross/Laysan_Albatross_0059_488,002.Laysan_Albatross,"0,1,2",045.Northern_Fulmar,045.Northern_Fulmar,045.Northern_Fulmar
+validation/003.Sooty_Albatross/Sooty_Albatross_0051_796374,003.Sooty_Albatross,"0,1,2",142.Black_Tern,072.Pomarine_Jaeger,072.Pomarine_Jaeger
+validation/010.Red_winged_Blackbird/Red_Winged_Blackbird_0045_4526,010.Red_winged_Blackbird,"0,1,2",029.American_Crow,029.American_Crow,029.American_Crow

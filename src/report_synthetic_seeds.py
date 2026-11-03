@@ -1,8 +1,8 @@
 """Validate and report three real + accepted synthetic 10-shot classifier runs (seeds 0-2).
 
-Real-only references: the matched 10-shot seed-0 baseline (paired, same real subset) and the
+Real-only references: the matched 10-shot baselines for seeds 0-2 (paired real subsets) and the
 three-seed real-only 20-shot summary (4,000 real images, a similar training-set size).
-Per-species changes are paired only for seed 0, the one seed with a 10-shot real-only run.
+The exploratory per-species breakdown below remains restricted to seed 0.
 
 Usage: python src/report_synthetic_seeds.py \
     --runs outputs/accepted_synthetic_10shot_seed0_20261023/real_synthetic_10shot_seed0 \
@@ -12,6 +12,7 @@ Usage: python src/report_synthetic_seeds.py \
 """
 import argparse
 import csv
+import hashlib
 import json
 import statistics
 from pathlib import Path
@@ -20,8 +21,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from load_data import PROJECT_ROOT, canonical_sha256, load_manifest, sha256_matches
-from summarize_results import collect_run, read_json
+from summarize_results import collect_run, read_csv, read_json
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 SYNTHETIC_MANIFEST = "data/synthetic/sd15_wildlife/prepared_accepted/manifest.csv"
 LEAKAGE_REPORT = "data/synthetic/sd15_wildlife/prepared_accepted/leakage_report.json"
@@ -55,7 +57,15 @@ def check_hashes(config, run, prepared):
             source = prepared / "leakage_report.json"
         else:
             source = PROJECT_ROOT / relative
-        assert canonical_sha256(source) == digest, (run, relative)
+        assert hash_matches(source, digest), (run, relative)
+
+
+def hash_matches(path, expected, legacy=False):
+    """Normalize text line endings; seed 0 also accepted raw Windows hashes."""
+    raw = path.read_bytes()
+    lf = raw.replace(b"\r\n", b"\n")
+    candidates = (raw, lf, lf.replace(b"\n", b"\r\n")) if legacy else (lf,)
+    return any(hashlib.sha256(data).hexdigest() == expected for data in candidates)
 
 
 def mean_std(values):
@@ -67,13 +77,16 @@ def main():
     parser.add_argument("--runs", type=Path, nargs=3, required=True, help="run directories for seeds 0, 1, 2")
     parser.add_argument("--prepared", type=Path, required=True, help="prepared_accepted directory used for training")
     parser.add_argument("--baseline", type=Path, default=PROJECT_ROOT / "reports" / "classifier" / "baseline_seed0")
+    parser.add_argument("--baseline-seeds12", type=Path, nargs=2,
+                        default=[PROJECT_ROOT / "reports" / "classifier" / f"baseline_seed{s}" for s in (1, 2)])
     parser.add_argument("--real20-summary", type=Path, default=PROJECT_ROOT / "reports" / "20shot_seeds0-2_summary.csv")
     parser.add_argument("--output-prefix", type=Path, required=True)
     args = parser.parse_args()
 
-    held_out = set(load_manifest("val").image_id) | set(load_manifest("test").image_id)
-    synthetic = load_manifest_csv(args.prepared / "manifest.csv")
-    assert len(synthetic) == 1440 and not set(synthetic.image_id) & held_out
+    held_out = {row["image_id"] for split in ("val", "test")
+                for row in read_csv(PROJECT_ROOT / "splits" / "manifests" / f"{split}.csv")}
+    synthetic = read_csv(args.prepared / "manifest.csv")
+    assert len(synthetic) == 1440 and not {row["image_id"] for row in synthetic} & held_out
 
     rows, configs, per_class = [], [], []
     for seed, run in enumerate(args.runs):
@@ -91,15 +104,27 @@ def main():
         assert all(c[key] == configs[0][key] for c in configs), key
     assert len({c["sha256"][SYNTHETIC_MANIFEST] for c in configs}) == 1
 
-    base_config = read_json(args.baseline / "config.json")
     # The baseline config predates --full-image and train_preprocessing: then training always used
-    # resize + center crop. Its hashes are raw bytes, so compare them with sha256_matches.
+    # resize + center crop. Its raw Windows hashes also need the legacy line-ending check.
     defaults = {"full_image": False, "train_preprocessing": "resize_center_crop"}
-    for key in SHARED:
-        assert base_config.get(key, defaults.get(key)) == configs[0][key], ("baseline", key)
-    train0 = "splits/manifests/train_10shot_seed0.csv"
-    assert sha256_matches(PROJECT_ROOT / train0, base_config["sha256"][train0])
-    base_row, base_report = with_macro(collect_run(args.baseline), args.baseline)
+    base_rows = []
+    for seed, run in enumerate([args.baseline, *args.baseline_seeds12]):
+        base_config = read_json(run / "config.json")
+        assert base_config["seed"] == seed and base_config["arm"] == "baseline"
+        assert base_config["train_images"] == 2000 and base_config.get("synthetic_manifest") is None
+        for key in (*SHARED, "architecture", "weights", "selection_metric"):
+            assert base_config.get(key, defaults.get(key)) == configs[seed][key], (run, key)
+        for relative, digest in base_config["sha256"].items():
+            # Seed 0 used an older training implementation; validate its data hashes here.
+            if seed != 0 or relative.startswith("splits/"):
+                assert hash_matches(PROJECT_ROOT / relative, digest, legacy=(seed == 0)), (run, relative)
+        base_row, report = with_macro(collect_run(run), run)
+        base_rows.append(base_row)
+        if seed == 0:
+            base_report = report
+    base_row = base_rows[0]
+    base_summary = {key: mean_std([r[key] for r in base_rows]) for key in SCORES}
+    paired_deltas = [100 * (r["macro_f1"] - b["macro_f1"]) for r, b in zip(rows, base_rows)]
 
     real20 = {r["metric"]: (float(r["mean"]), float(r["sample_std"]))
               for r in csv.DictReader(args.real20_summary.open(encoding="utf-8"))}
@@ -153,22 +178,20 @@ def main():
     prefix.with_suffix(".json").write_text(json.dumps({
         "seeds": [0, 1, 2], "std_ddof": 1, "split": "val", "runs": rows, "summary": summary,
         "real_only_10shot_seed0": base_row, "real_only_20shot_seeds0_2": real20,
+        "real_only_10shot_seeds0_2": base_rows, "real_only_10shot_summary": base_summary,
+        "paired_macro_f1_change_pp": paired_deltas,
+        "paired_macro_f1_change_summary_pp": mean_std(paired_deltas),
         "synthetic_manifest_sha256": configs[0]["sha256"][SYNTHETIC_MANIFEST],
         "by_synthetic_count_seed0": buckets,
     }, indent=2), encoding="utf-8")
 
-    plot(args.runs, args.baseline, rows, summary, base_row, real20, buckets, prefix)
-    write_markdown(prefix, rows, summary, base_row, real20, buckets, counts, delta0)
+    plot(args.runs, args.baseline, rows, summary, base_summary, real20, buckets, prefix)
+    write_markdown(prefix, rows, summary, base_summary, paired_deltas, real20, buckets, counts, delta0)
     print(prefix.with_suffix(".md").read_text(encoding="utf-8").split("\n\n")[2])
     print(f"Saved report: {prefix.with_suffix('.md')}")
 
 
-def load_manifest_csv(path):
-    import pandas as pd
-    return pd.read_csv(path)
-
-
-def plot(runs, baseline, rows, summary, base_row, real20, buckets, prefix):
+def plot(runs, baseline, rows, summary, base_summary, real20, buckets, prefix):
     colors = ("tab:blue", "tab:orange", "tab:green")
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.3))
     for seed, (run, color) in enumerate(zip(runs, colors)):
@@ -182,9 +205,9 @@ def plot(runs, baseline, rows, summary, base_row, real20, buckets, prefix):
     axes[0].grid(alpha=0.25)
     axes[0].legend(fontsize=8)
 
-    labels = ["Real-only\n10-shot (seed 0)", "Real + synthetic\n10-shot (seeds 0-2)", "Real-only\n20-shot (seeds 0-2)"]
-    means = [100 * base_row["macro_f1"], 100 * summary["macro_f1"]["mean"], 100 * real20["macro_f1"][0]]
-    errors = [0, 100 * summary["macro_f1"]["std"], 100 * real20["macro_f1"][1]]
+    labels = ["Real-only\n10-shot (seeds 0-2)", "Real + synthetic\n10-shot (seeds 0-2)", "Real-only\n20-shot (seeds 0-2)"]
+    means = [100 * base_summary["macro_f1"]["mean"], 100 * summary["macro_f1"]["mean"], 100 * real20["macro_f1"][0]]
+    errors = [100 * base_summary["macro_f1"]["std"], 100 * summary["macro_f1"]["std"], 100 * real20["macro_f1"][1]]
     axes[1].bar(range(3), means, yerr=errors, capsize=5, alpha=0.6, color=["gray", "tab:purple", "tab:gray"])
     for seed, color in enumerate(colors):
         axes[1].scatter([1 + (seed - 1) * 0.09], [100 * rows[seed]["macro_f1"]], color=color, s=20, zorder=3)
@@ -210,7 +233,7 @@ def pct(value):
     return f"{100 * value:.2f}%"
 
 
-def write_markdown(prefix, rows, summary, base_row, real20, buckets, counts, delta0):
+def write_markdown(prefix, rows, summary, base_summary, paired_deltas, real20, buckets, counts, delta0):
     table = ["| Seed | Macro F1 | Accuracy | Macro precision | Macro recall | Val loss | Best step | Time (min) | GPU |",
              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |"]
     for row in rows:
@@ -227,7 +250,7 @@ def write_markdown(prefix, rows, summary, base_row, real20, buckets, counts, del
     comparison = "\n".join([
         "| Training data | Real | Synthetic | Seeds | Validation macro F1 | Accuracy |",
         "| --- | ---: | ---: | --- | ---: | ---: |",
-        f"| Real-only, 10-shot | 2,000 | 0 | 0 | {pct(base_row['macro_f1'])} | {pct(base_row['accuracy'])} |",
+        f"| Real-only, 10-shot | 2,000 | 0 | 0-2 | {pct(base_summary['macro_f1']['mean'])} ± {100 * base_summary['macro_f1']['std']:.2f} pp | {pct(base_summary['accuracy']['mean'])} ± {100 * base_summary['accuracy']['std']:.2f} pp |",
         f"| **Real + accepted synthetic, 10-shot** | 2,000 | 1,440 | 0-2 | **{pct(m)} ± {100 * s:.2f} pp** | "
         f"**{pct(summary['accuracy']['mean'])} ± {100 * summary['accuracy']['std']:.2f} pp** |",
         f"| Real-only, 20-shot | 4,000 | 0 | 0-2 | {100 * r20:.2f}% ± {100 * r20s:.2f} pp | {100 * a20:.2f}% ± {100 * a20s:.2f} pp |",
@@ -239,10 +262,8 @@ def write_markdown(prefix, rows, summary, base_row, real20, buckets, counts, del
           f"{pct(b['mean_f1_synthetic_seed0'])} | {b['mean_delta_f1_seed0_pp']:+.2f} pp | "
           f"{b['species_better']} / {b['species_same']} / {b['species_worse']} |" for b in buckets),
     ])
-    delta_seed0 = 100 * (rows[0]["macro_f1"] - base_row["macro_f1"])
     gap20 = 100 * (r20 - m)
     no_syn, full_syn = buckets[0], buckets[-1]
-    best_seed = max(rows, key=lambda r: r["macro_f1"])
     commands = "\n".join(
         f"python src/train_classifier.py --k-shot 10 --seed {r['seed']} --device cuda --amp "
         f"--synthetic-manifest {SYNTHETIC_MANIFEST} --output {r['run']}" for r in rows)
@@ -250,6 +271,8 @@ def write_markdown(prefix, rows, summary, base_row, real20, buckets, counts, del
     document = f"""# Real + accepted synthetic augmentation, 10-shot, seeds 0–2
 
 Run dates: seed 0 on 23 October 2026 (RTX 4060 Laptop), seeds 1–2 on 24 October 2026 (RTX 3070).
+
+Updated 27 October 2026 with Karina's real-only 10-shot seeds 1–2. The full three-approach comparison, including standard augmentation, is in the [weekly report](../docs/WEEKLY_REPORT_2026-10-27.md).
 
 {chr(10).join(table)}
 
@@ -263,8 +286,8 @@ SD is the sample standard deviation across three seeds (`ddof=1`); score SDs are
 
 ## Conclusions
 
-1. **Synthetic images did not improve validation macro F1.** In the only paired comparison (seed 0, same 2,000 real images), adding 1,440 accepted synthetic images changed macro F1 by **{delta_seed0:+.2f} pp** ({pct(base_row['macro_f1'])} → {pct(rows[0]['macro_f1'])}). Across seeds 0–2 the synthetic arm reaches {pct(m)} ± {100 * s:.2f} pp. Seed {best_seed['seed']} scores {pct(best_seed['macro_f1'])}, close to the seed-0 real-only run, but it uses a different real subset; its paired change is unknown until real-only 10-shot seeds 1–2 exist.
-2. **Real images are worth much more than synthetic ones.** The same 2,000 real images plus 2,000 more real ones (20-shot) give {100 * r20:.2f}% ± {100 * r20s:.2f} pp, **{gap20:.1f} pp above** the synthetic arm with a similar training-set size (4,000 vs. 3,440 entries).
+1. **Synthetic images did not improve validation macro F1 in any paired seed.** Adding the reviewed pool changed macro F1 by **{', '.join(f'{d:+.2f}' for d in paired_deltas)} pp** for seeds 0, 1 and 2. The mean paired change is **{statistics.mean(paired_deltas):+.2f} ± {statistics.stdev(paired_deltas):.2f} pp** (sample SD). Real-only reaches {pct(base_summary['macro_f1']['mean'])} ± {100 * base_summary['macro_f1']['std']:.2f} pp; synthetic reaches {pct(m)} ± {100 * s:.2f} pp. This describes the tested pool and training setup, not synthetic data in general.
+2. **The 20-shot real-only reference scores higher.** It gives {100 * r20:.2f}% ± {100 * r20s:.2f} pp, **{gap20:.1f} pp above** the synthetic arm. It uses twice as many distinct real images, so this comparison does not isolate the effect of augmentation (4,000 vs. 3,440 total entries).
 3. **No species group gained on average, and species with incomplete synthetic sets lost most.** In seed 0, species with all 10 synthetic images changed by {full_syn['mean_delta_f1_seed0_pp']:+.2f} pp ({full_syn['species_better']} better, {full_syn['species_worse']} worse of {full_syn['species']}); species with 0–9 synthetic images changed by {min(b['mean_delta_f1_seed0_pp'] for b in buckets[:-1]):+.2f} to {max(b['mean_delta_f1_seed0_pp'] for b in buckets[:-1]):+.2f} pp. Their real-only F1 is similar ({min(b['mean_f1_real_only_seed0'] for b in buckets) * 100:.0f}–{max(b['mean_f1_real_only_seed0'] for b in buckets) * 100:.0f}%), so they were not simply harder. One explanation consistent with this: filtering left 10 to 20 training entries per species, and a classifier trained on this uneven mix favors species with more entries. With 5 validation images per species, one prediction moves a species' F1 by up to ~20 pp, so the pattern is single-seed and noisy.
 4. **Generation and preparation are reproducible.** Seeds 1–2 were prepared and trained on another machine; the prepared manifest is byte-identical to the seed-0 one (same SHA-256), and all runs share code, split manifests and training settings.
 
@@ -292,9 +315,9 @@ Files: [per-run CSV]({prefix.name}.csv), [mean and SD CSV]({prefix.name}_summary
 
 ## Limitations
 
-Single real-only 10-shot seed: the paired change and its variability are known for seed 0 only. Validation is also used for checkpoint selection, so all numbers are optimistic. Three seeds give a descriptive SD, not a confidence interval. Filtering changed both image quality and class coverage, so this run alone does not separate the effect of quality from the effect of the smaller, uneven pool.
+Aggregate paired changes now cover seeds 0–2; the exploratory per-species count breakdown remains seed 0 only. Validation is also used for checkpoint selection, so scores may be optimistic. Three seeds give a descriptive SD, not a confidence interval. Filtering changed both image quality and class coverage, so these runs do not separate the effect of quality from the effect of the smaller, uneven pool. Hardware and library versions also differ between some runs.
 
-Verification passed: fixed settings in every config, identical synthetic manifest and class mapping across seeds, recorded hashes against current split manifests, code and the prepared files, no synthetic/held-out overlap, baseline sharing settings and the seed-0 real subset, validation IDs in manifest order, aggregate and per-class metrics recomputed from predictions, and best checkpoint step / metrics matched to history.
+Verification passed: fixed settings in every config, identical synthetic manifest and class mapping across seeds, recorded hashes against current split manifests, code and the prepared files, no synthetic/held-out overlap, baselines sharing settings and the corresponding seed's real subset, validation IDs in manifest order, aggregate and per-class metrics recomputed from predictions, and best checkpoint step / metrics matched to history. The older baseline seed-0 code hashes are retained as provenance; its data hashes and explicit settings were checked.
 """
     prefix.with_suffix(".md").write_text(document, encoding="utf-8")
 

@@ -1,0 +1,13 @@
+split,k_shot,comparison,seed,first_run,second_run,macro_f1_change_pp,accuracy_change_pp
+val,10,standard_aug_minus_baseline,0,archive/standard_aug_10shot_seed0_original,baseline_seed0,0.390951107715809,0.40000000000000036
+val,10,standard_aug_minus_baseline,1,standard_aug_10shot_seed1_t4,baseline_seed1,-0.5690692047890189,-0.20000000000000018
+val,10,standard_aug_minus_baseline,2,standard_aug_10shot_seed2_t4,baseline_seed2,0.02634828192104033,0.30000000000000027
+val,10,real_synthetic_minus_baseline,0,accepted_synthetic_10shot_seed0,baseline_seed0,-4.185849479038334,-3.1000000000000028
+val,10,real_synthetic_minus_baseline,1,accepted_synthetic_10shot_seed1,baseline_seed1,-0.4678397969419601,-0.20000000000000018
+val,10,real_synthetic_minus_baseline,2,accepted_synthetic_10shot_seed2,baseline_seed2,-2.109182793470721,-2.0000000000000018
+val,10,real_synthetic_minus_standard_aug,0,accepted_synthetic_10shot_seed0,archive/standard_aug_10shot_seed0_original,-4.576800586754143,-3.500000000000003
+val,10,real_synthetic_minus_standard_aug,1,accepted_synthetic_10shot_seed1,standard_aug_10shot_seed1_t4,0.1012294078470588,0.0
+val,10,real_synthetic_minus_standard_aug,2,accepted_synthetic_10shot_seed2,standard_aug_10shot_seed2_t4,-2.135531075391761,-2.300000000000002
+val,20,real_synthetic_minus_baseline,0,accepted_synthetic_20shot_seed0,baseline_20shot_seed0,-3.197940434589708,-2.500000000000002
+val,20,real_synthetic_minus_baseline,1,accepted_synthetic_20shot_seed1,baseline_20shot_seed1,-1.3207381369920057,-0.8000000000000007
+val,20,real_synthetic_minus_baseline,2,accepted_synthetic_20shot_seed2,baseline_20shot_seed2,-0.8202291385795202,-0.5000000000000004

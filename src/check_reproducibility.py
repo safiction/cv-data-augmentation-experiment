@@ -95,11 +95,12 @@ def check_splits(root):
 
 def planned_runs():
     for seed in SEEDS:
-        yield ("baseline_seed0" if seed == 0 else f"baseline_10shot_seed{seed}"), "baseline", seed, 10
+        yield f"baseline_seed{seed}", "baseline", seed, 10
         yield f"standard_aug_10shot_seed{seed}_t4", "standard_aug", seed, 10
         yield f"accepted_synthetic_10shot_seed{seed}", "real_synthetic", seed, 10
     for seed in SEEDS:
         yield f"baseline_20shot_seed{seed}", "baseline", seed, 20
+        yield f"accepted_synthetic_20shot_seed{seed}", "real_synthetic", seed, 20
 
 
 def check_hashes(root, run, config):

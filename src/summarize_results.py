@@ -150,10 +150,38 @@ def print_markdown(rows):
         print("| " + " | ".join(values) + " |")
 
 
+def paired_changes(rows):
+    """Subtract scores within a seed; 20-shot references are not matched baselines."""
+    runs = {}
+    for row in rows:
+        if row["k_shot"] != 10:
+            continue
+        key = (row["arm"], row["seed"])
+        if key in runs:
+            raise ValueError(f"Ambiguous paired run: {key}")
+        runs[key] = row
+    changes = []
+    for first, second in (("standard_aug", "baseline"), ("real_synthetic", "baseline"),
+                          ("real_synthetic", "standard_aug")):
+        for seed in range(3):
+            if (first, seed) not in runs or (second, seed) not in runs:
+                raise ValueError(f"Missing paired 10-shot run for {first} / {second}, seed {seed}")
+            a, b = runs[first, seed], runs[second, seed]
+            changes.append({
+                "comparison": f"{first}_minus_{second}", "seed": seed,
+                "first_run": a["run"], "second_run": b["run"],
+                "macro_f1_change_pp": 100 * (a["macro_f1"] - b["macro_f1"]),
+                "accuracy_change_pp": 100 * (a["accuracy"] - b["accuracy"]),
+            })
+    return changes
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reports-dir", type=Path, default=Path("reports/classifier"))
     parser.add_argument("--output", type=Path, default=Path("reports/classifier/results_summary.csv"))
+    parser.add_argument("--paired-output", type=Path,
+                        help="Optional CSV of paired 10-shot changes for seeds 0, 1, 2")
     args = parser.parse_args()
 
     run_dirs = sorted(
@@ -163,12 +191,25 @@ def main():
     if not run_dirs:
         raise SystemExit(f"No classifier runs found in {args.reports_dir}")
 
-    rows = [collect_run(path) for path in run_dirs]
+    from evaluation_selection import selected_run
+    rows = []
+    for path in run_dirs:
+        run = selected_run(path.name)
+        chosen = args.reports_dir / run
+        rows.append({**collect_run(chosen), "run": run})
+    changes = paired_changes(rows) if args.paired_output else None
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+    if changes is not None:
+        args.paired_output.parent.mkdir(parents=True, exist_ok=True)
+        with args.paired_output.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=list(changes[0]), lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(changes)
 
     print_markdown(rows)
     print(f"\nSaved {len(rows)} run(s) to {args.output}")

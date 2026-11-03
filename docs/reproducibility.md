@@ -1,5 +1,37 @@
 # Reproducibility verification — Artem, 3 November 2026
 
+## Test archive update — 3 November 2026
+
+The supplied archives provide 17 distinct test CSVs: **15 selected runs and two historical diagnostics**. All contain the exact 5,794 test IDs/labels, and metrics have been recomputed. Following Karina’s clarification, standard seed 0 now uses her complete validation/test/runtime bundle (`archive/standard_aug_10shot_seed0_original`); seeds 1–2 use Artem’s T4 runs. All 15 selected checkpoint files are available locally. No repeat export or training is required.
+
+The selected seed-0 validation predictions, metrics and checkpoint selection were checked, and its weights match the saved configuration and validation F1. The source audit and CPU replay below retain their original scope: they cover T4 seed 0, not Karina’s different recorded source version. They must not be cited as source verification or replay of the replacement. The current report selection is recorded in `src/evaluation_selection.py`.
+
+The archives lack original evaluation configurations/environment records. Checkpoint
+metadata matching and CSV validation do not constitute inference replay. The updated
+[evaluation README](../reports/evaluation_2026-11-03/README.md) and
+[test verification](../reports/evaluation_2026-11-03/test_verification.json) document these limits.
+The 2 November status below describes the files available before this import.
+
+## Follow-up — Arina, 2 November 2026
+
+After combining the merged PRs with the locally supplied baseline seeds 1–2, the audit
+passes for **all 15 runs**, with no missing primary or reference runs. The explicit baseline
+paths are `reports/classifier/baseline_seed{0,1,2}`. The three additional reviewed-synthetic
+20-shot runs are now checked as well. Current evidence:
+[follow-up audit](../reports/reproducibility_followup_2026-11-03.json).
+`python src/check_reproducibility.py --require-complete` now succeeds.
+
+The [local checkpoint inventory](../reports/evaluation_2026-11-03/checkpoint_inventory.json)
+records SHA-256 and verifies embedded config, selected step and saved validation F1 for
+12 checkpoints (nine primary and three real-only 20-shot references). The three synthetic
+20-shot checkpoints are not available locally. This metadata check is not an inference replay
+or a team freeze. No test predictions are available in the checked repository or local outputs.
+
+The original audit below is retained as a dated record of what Artem verified against
+`cd7d07a`; its missing-baseline statements describe that earlier snapshot only.
+
+## Original audit — snapshot at `cd7d07a`
+
 Audit performed on 2 November for the 3 November deadline, using the comparison artifacts
 in `main` at `cd7d07a`. Machine-readable evidence, input checks and replay commands are in
 [`reports/reproducibility_2026-11-03.json`](../reports/reproducibility_2026-11-03.json).

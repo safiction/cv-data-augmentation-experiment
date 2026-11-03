@@ -42,7 +42,7 @@ def test_available_valid_run_is_distinct_from_complete_matrix(snapshot):
     assert not report["errors"]
     assert [r["run"] for r in report["runs"]] == [RUN]
     assert len(report["missing_primary_runs"]) == 8
-    assert len(report["missing_reference_runs"]) == 3
+    assert len(report["missing_reference_runs"]) == 6
 
 
 @pytest.mark.parametrize("file,key,value", [

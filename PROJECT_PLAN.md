@@ -33,7 +33,7 @@ Validation and test contain only real images, so evaluation measures performance
 
 **Reviewed pool — update, 26 October 2026:** retain `ok` (1,120) and `artifact` (320; correct species with visual defects) images, up to 10 per species. Keep available accepted images when fewer than 10 remain. Counts vary by species, including species with none; additional generation is postponed. Reuse this fixed pool across seeds.
 
-**Budget — update, 26 October 2026:** the primary comparison remains **9 runs** (three approaches × three paired seeds); **7 are complete**, with 10-shot real-only seeds 1 and 2 remaining. The additional 20-shot real-only comparison comprises **3 completed runs**, for **12 planned comparison runs in total**. Earlier diagnostic runs and repeated runs are tracked separately. Pair real subsets and classifier initialization across the primary approaches; keep optimizer, batch size, and training-step budget fixed to avoid giving one approach extra training. Reusing one synthetic pool means seed variability does not measure variability between generated pools. 10-shot real-only seeds 1 and 2 are trained, completing the 9-run primary comparison. With the 3 runs of 20-shot reviewed synthetic below, the total is **15 comparison runs**.
+**Budget — update, 2 November 2026:** all **9 primary 10-shot runs** and **6 additional 20-shot runs** are complete: three real-only references and three reviewed-synthetic runs, **15 comparison runs in total**. Earlier diagnostics and repeats are tracked separately. Pair real subsets and classifier initialization within each shot count; keep optimizer, batch size and training-step budget fixed. Reusing one synthetic pool means seed variability does not measure variation between generated pools.
 
 **20-shot reference — update, 26 October 2026:** compare against real-only training on 4,000 real images (20 per species), seeds 0–2. This measures performance with more real data and does not replace the matched 10-shot baseline or isolate the effect of augmentation.
 
@@ -51,7 +51,7 @@ change separately from the core three-arm comparison; run with `--full-image`.
 | **Per-class precision, recall, F1** | Identifies which species benefit or deteriorate |
 | **Generation and training time, separately** | Shows the computational cost of improvements; record hardware |
 
-Select checkpoints on validation macro F1. **Update — 26 October 2026:** complete the remaining 10-shot baseline runs, compare validation results, then freeze experimental choices and selected checkpoints before test evaluation. Report mean ± standard deviation across seeds and paired macro-F1 changes in percentage points. Discuss seed variability and at least three real test failure examples.
+Select checkpoints on validation macro F1. **Update — 27 October 2026:** the matched validation comparison is complete; freeze experimental choices and selected checkpoints before test evaluation. Report mean ± standard deviation across seeds and paired macro-F1 changes in percentage points. Discuss seed variability and at least three real test failure examples.
 
 **Optional extensions — update, 26 October 2026:** the 20-shot reference is complete. Original versus reviewed synthetic data has been compared at seed 0, but both quality and quantity changed. Remaining optional extensions include controlled synthetic-to-real ratios, 5-shot training, fine-tuning the final classifier block, quality comparisons at matched counts and class coverage, varied prompts/backgrounds, and deliberately imbalanced training classes. Defer these until the primary comparison is complete; change one factor at a time.
 
@@ -85,14 +85,10 @@ Select checkpoints on validation macro F1. **Update — 26 October 2026:** compl
 | **3 Nov** | Freeze checkpoints; export test predictions | Verify reproducibility | Finalize generation quality/cost records | Final test metrics, runtime tables, figures |
 | **10 Nov** | Classifier section/slides; demo | Data section/slides; README/environment | Generation section/slides; assemble presentation | Evaluation section/slides; edit two-page summary |
 
+**Schedule update — 27 October 2026:** Karina's 10-shot real-only seeds 1 and 2 are complete, and the paired validation comparison has been updated. No baseline training remains for the planned seeds. By **3 November**, the team will freeze experimental choices and checkpoints; Karina will export test predictions and Arina will prepare final test metrics, runtime tables and figures as assigned above.
+
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
 
-**Artem — 3 November reproducibility deliverable (verified 2 November):** the offline
-audit validates all ten available comparison runs (seven primary and three 20-shot
-references), split/subset manifests, recorded source/input hashes, prediction-derived
-metrics and checkpoint selection from history. Baseline 10-shot seeds 1–2 are still
-missing. Pinning Pillow 12.2.0 resolved the initial CPU/T4 decoding/preprocessing
-differences: all 3,000 standard-augmentation predictions and per-class metrics now match
-the original T4 results; loss differs by at most `1.38e-7`.
-Baseline/synthetic checkpoint inference and full retraining were not verified.
-Commands, evidence and handoff: [docs/reproducibility.md](docs/reproducibility.md).
+**Reproducibility update — 2 November 2026:** Artem completed the offline artifact audit and reproduced all 3,000 standard-augmentation validation predictions on CPU after pinning Pillow 12.2.0. Arina's follow-up audit includes the locally imported baseline seeds 1–2 and Safina's three new 20-shot synthetic runs. Baseline/synthetic checkpoint replay and final test export remain to be completed by the checkpoint owner. See [docs/reproducibility.md](docs/reproducibility.md).
+
+**Evaluation update — 3 November 2026:** test metrics, paired comparisons, runtime tables and figures are complete for **15/15 selected models**. Following Karina’s clarification, standard seed 0 uses her full validation/test/runtime bundle; seeds 1–2 use Artem’s T4 runs. No repeat test export or retraining is required. Three original failure photos and possible causes are included in the weekly report. Final presentation preparation remains; original inference metadata can be added if available. No models are retuned using test results.

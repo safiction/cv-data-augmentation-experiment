@@ -1,0 +1,18 @@
+{
+  "verified_prediction_files": 17,
+  "selected_test_runs": 15,
+  "expected_selected_runs": 15,
+  "missing_selected_runs": [],
+  "historical_diagnostics": [
+    "diagnostics/baseline_all_train_seed0",
+    "archive/real_synthetic_10shot_seed0_unfiltered"
+  ],
+  "test_images_per_run": 5794,
+  "test_manifest_sha256": "27bb78115f171026db0ce528873945df3ebe46cecb890e84e3a804bad6b39823",
+  "metric_method": "Recomputed from supplied hard labels, all 200 species, zero_division=0",
+  "limitations": [
+    "Original evaluation_config.json and metric JSON files were not supplied",
+    "Matching co-delivered weights does not independently prove which environment/checkpoint produced each CSV",
+    "Scores will be recomputed from hard labels; loss and confidence are unavailable"
+  ]
+}

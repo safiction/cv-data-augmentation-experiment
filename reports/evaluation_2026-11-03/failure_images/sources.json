@@ -1,0 +1,35 @@
+[
+  {
+    "image_id": "validation/003.Sooty_Albatross/Sooty_Albatross_0051_796374",
+    "file": "Sooty_Albatross_0051_796374.jpg",
+    "sha256": "e005c217b2b5a04163557ed959f87ca35e1c0bea1528e4342f0159daa955d041",
+    "source": "https://huggingface.co/datasets/birder-project/CUB_200_2011/resolve/refs%2Fconvert%2Fparquet/default/train/0001.parquet",
+    "parquet_row_group": 25,
+    "row_in_group": 63,
+    "source_dataset": "birder-project/CUB_200_2011",
+    "retrieved_on": "2026-11-03",
+    "modifications": "none; original JPEG bytes extracted from parquet"
+  },
+  {
+    "image_id": "validation/010.Red_winged_Blackbird/Red_Winged_Blackbird_0045_4526",
+    "file": "Red_Winged_Blackbird_0045_4526.jpg",
+    "sha256": "236ccad8f6ed9b9a869ad49556c3cc370d0050120f3a1d9693dc828a462f3495",
+    "source": "https://huggingface.co/datasets/birder-project/CUB_200_2011/resolve/refs%2Fconvert%2Fparquet/default/train/0001.parquet",
+    "parquet_row_group": 31,
+    "row_in_group": 92,
+    "source_dataset": "birder-project/CUB_200_2011",
+    "retrieved_on": "2026-11-03",
+    "modifications": "none; original JPEG bytes extracted from parquet"
+  },
+  {
+    "image_id": "validation/002.Laysan_Albatross/Laysan_Albatross_0059_488",
+    "file": "Laysan_Albatross_0059_488.jpg",
+    "sha256": "88f327aa63d92f293b5b64bbe3973d422ac1f44e89ab51808e6e6969ca16bb19",
+    "source": "https://huggingface.co/datasets/birder-project/CUB_200_2011/resolve/refs%2Fconvert%2Fparquet/default/train/0002.parquet",
+    "parquet_row_group": 0,
+    "row_in_group": 22,
+    "source_dataset": "birder-project/CUB_200_2011",
+    "retrieved_on": "2026-11-03",
+    "modifications": "none; original JPEG bytes extracted from parquet"
+  }
+]

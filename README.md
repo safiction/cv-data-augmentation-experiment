@@ -1,4 +1,7 @@
 # Synthetic Data Augmentation with Diffusion Models
+
+**Status — 3 November 2026:** validation/test comparisons cover all 15 selected models. Standard seed 0 uses Karina’s complete validation/test/runtime bundle; seeds 1–2 use Artem’s T4 runs. No repeat run is required. See the [evaluation report](docs/WEEKLY_REPORT_2026-11-03.md) and [evaluation files](reports/evaluation_2026-11-03/README.md).
+
 ## Project Question
 Can diffusion-based synthetic data augmentation improve image classification performance when training data is limited, and under what conditions do synthetic samples help versus hurt?
 ## ML Task
@@ -69,8 +72,8 @@ Transforms preview: `python src/preview_transforms.py` → `reports/figures/tran
 
 Reproducibility audit (offline, no training or test scoring):
 `python src/check_reproducibility.py --output outputs/reproducibility.json`.
-Add `--require-complete` to require all nine primary run artifacts; baseline seeds 1–2
-are currently missing. Verified evidence, replay commands and limitations:
+Add `--require-complete` to require all nine primary run artifacts; this check now passes.
+All 15 current comparison runs are audited. Verified evidence, replay commands and limitations:
 [docs/reproducibility.md](docs/reproducibility.md).
 For the validated CPU checkpoint replay, install `requirements-replay.txt`; Pillow 12.2.0
 reproduces all 3,000 standard-augmentation validation predictions from the original T4 runs.

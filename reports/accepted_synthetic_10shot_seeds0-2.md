@@ -2,6 +2,8 @@
 
 Run dates: seed 0 on 23 October 2026 (RTX 4060 Laptop), seeds 1–2 on 24 October 2026 (RTX 3070).
 
+Updated 27 October 2026 with Karina's real-only 10-shot seeds 1–2. The full three-approach comparison, including standard augmentation, is in the [weekly report](../docs/WEEKLY_REPORT_2026-10-27.md).
+
 | Seed | Macro F1 | Accuracy | Macro precision | Macro recall | Val loss | Best step | Time (min) | GPU |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | 0 | 48.96% | 50.20% | 54.63% | 50.20% | 1.9849 | 600 | 7.74 | RTX 4060 Laptop GPU |
@@ -15,7 +17,7 @@ SD is the sample standard deviation across three seeds (`ddof=1`); score SDs are
 
 | Training data | Real | Synthetic | Seeds | Validation macro F1 | Accuracy |
 | --- | ---: | ---: | --- | ---: | ---: |
-| Real-only, 10-shot | 2,000 | 0 | 0 | 53.15% | 53.30% |
+| Real-only, 10-shot | 2,000 | 0 | 0-2 | 53.56% ± 0.43 pp | 53.87% ± 0.49 pp |
 | **Real + accepted synthetic, 10-shot** | 2,000 | 1,440 | 0-2 | **51.31% ± 2.11 pp** | **52.10% ± 1.85 pp** |
 | Real-only, 20-shot | 4,000 | 0 | 0-2 | 59.69% ± 0.71 pp | 59.77% ± 0.65 pp |
 
@@ -23,8 +25,8 @@ SD is the sample standard deviation across three seeds (`ddof=1`); score SDs are
 
 ## Conclusions
 
-1. **Synthetic images did not improve validation macro F1.** In the only paired comparison (seed 0, same 2,000 real images), adding 1,440 accepted synthetic images changed macro F1 by **-4.19 pp** (53.15% → 48.96%). Across seeds 0–2 the synthetic arm reaches 51.31% ± 2.11 pp. Seed 1 scores 53.06%, close to the seed-0 real-only run, but it uses a different real subset; its paired change is unknown until real-only 10-shot seeds 1–2 exist.
-2. **Real images are worth much more than synthetic ones.** The same 2,000 real images plus 2,000 more real ones (20-shot) give 59.69% ± 0.71 pp, **8.4 pp above** the synthetic arm with a similar training-set size (4,000 vs. 3,440 entries).
+1. **Synthetic images did not improve validation macro F1 in any paired seed.** Adding the reviewed pool changed macro F1 by **-4.19, -0.47, -2.11 pp** for seeds 0, 1 and 2. The mean paired change is **-2.25 ± 1.86 pp** (sample SD). Real-only reaches 53.56% ± 0.43 pp; synthetic reaches 51.31% ± 2.11 pp. This describes the tested pool and training setup, not synthetic data in general.
+2. **The 20-shot real-only reference scores higher.** It gives 59.69% ± 0.71 pp, **8.4 pp above** the synthetic arm. It uses twice as many distinct real images, so this comparison does not isolate the effect of augmentation (4,000 vs. 3,440 total entries).
 3. **No species group gained on average, and species with incomplete synthetic sets lost most.** In seed 0, species with all 10 synthetic images changed by -1.21 pp (32 better, 33 worse of 82); species with 0–9 synthetic images changed by -7.19 to -5.05 pp. Their real-only F1 is similar (50–57%), so they were not simply harder. One explanation consistent with this: filtering left 10 to 20 training entries per species, and a classifier trained on this uneven mix favors species with more entries. With 5 validation images per species, one prediction moves a species' F1 by up to ~20 pp, so the pattern is single-seed and noisy.
 4. **Generation and preparation are reproducible.** Seeds 1–2 were prepared and trained on another machine; the prepared manifest is byte-identical to the seed-0 one (same SHA-256), and all runs share code, split manifests and training settings.
 
@@ -59,6 +61,6 @@ Files: [per-run CSV](accepted_synthetic_10shot_seeds0-2.csv), [mean and SD CSV](
 
 ## Limitations
 
-Single real-only 10-shot seed: the paired change and its variability are known for seed 0 only. Validation is also used for checkpoint selection, so all numbers are optimistic. Three seeds give a descriptive SD, not a confidence interval. Filtering changed both image quality and class coverage, so this run alone does not separate the effect of quality from the effect of the smaller, uneven pool.
+Aggregate paired changes now cover seeds 0–2; the exploratory per-species count breakdown remains seed 0 only. Validation is also used for checkpoint selection, so scores may be optimistic. Three seeds give a descriptive SD, not a confidence interval. Filtering changed both image quality and class coverage, so these runs do not separate the effect of quality from the effect of the smaller, uneven pool. Hardware and library versions also differ between some runs.
 
-Verification passed: fixed settings in every config, identical synthetic manifest and class mapping across seeds, recorded hashes against current split manifests, code and the prepared files, no synthetic/held-out overlap, baseline sharing settings and the seed-0 real subset, validation IDs in manifest order, aggregate and per-class metrics recomputed from predictions, and best checkpoint step / metrics matched to history.
+Verification passed: fixed settings in every config, identical synthetic manifest and class mapping across seeds, recorded hashes against current split manifests, code and the prepared files, no synthetic/held-out overlap, baselines sharing settings and the corresponding seed's real subset, validation IDs in manifest order, aggregate and per-class metrics recomputed from predictions, and best checkpoint step / metrics matched to history. The older baseline seed-0 code hashes are retained as provenance; its data hashes and explicit settings were checked.

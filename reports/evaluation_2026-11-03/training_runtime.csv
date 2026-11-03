@@ -1,0 +1,16 @@
+run,k_shot,arm,seed,training_minutes,optimizer_steps,python,torch,torchvision,sklearn,platform,gpu
+baseline_seed0,10,baseline,0,7.409763913333881,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+archive/standard_aug_10shot_seed0_original,10,standard_aug,0,24.21732242500002,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+accepted_synthetic_10shot_seed0,10,real_synthetic,0,7.74384931333334,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+baseline_seed1,10,baseline,1,10.933849196666658,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+standard_aug_10shot_seed1_t4,10,standard_aug,1,6.731505701366668,1000,3.13.15,2.11.0+cu128,0.26.0+cu128,1.6.1,Linux-6.18.55+-x86_64-with-glibc2.39,Tesla T4
+accepted_synthetic_10shot_seed1,10,real_synthetic,1,4.934306506666689,1000,3.14.7,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26200-SP0,NVIDIA GeForce RTX 3070
+baseline_seed2,10,baseline,2,8.251920654999655,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+standard_aug_10shot_seed2_t4,10,standard_aug,2,6.735086100166666,1000,3.13.15,2.11.0+cu128,0.26.0+cu128,1.6.1,Linux-6.18.55+-x86_64-with-glibc2.39,Tesla T4
+accepted_synthetic_10shot_seed2,10,real_synthetic,2,4.931832533333242,1000,3.14.7,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26200-SP0,NVIDIA GeForce RTX 3070
+baseline_20shot_seed0,20,baseline,0,10.390315051666645,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+accepted_synthetic_20shot_seed0,20,real_synthetic,0,7.0702185400000115,1000,3.14.7,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26200-SP0,NVIDIA GeForce RTX 3070
+baseline_20shot_seed1,20,baseline,1,9.343789213333366,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+accepted_synthetic_20shot_seed1,20,real_synthetic,1,6.953871444999822,1000,3.14.7,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26200-SP0,NVIDIA GeForce RTX 3070
+baseline_20shot_seed2,20,baseline,2,6.950417213333276,1000,3.13.4,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26300-SP0,NVIDIA GeForce RTX 4060 Laptop GPU
+accepted_synthetic_20shot_seed2,20,real_synthetic,2,6.6975594533330876,1000,3.14.7,2.14.1+cu130,0.29.1+cu130,1.9.1,Windows-11-10.0.26200-SP0,NVIDIA GeForce RTX 3070
