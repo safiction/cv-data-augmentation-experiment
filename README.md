@@ -22,7 +22,7 @@ As checked against `main` on **9 November 2026**, all nine primary runs and six
 20-shot references have validation and test results. The 20-shot groups compare 4,000 real
 images against 4,000 real + 1,440 synthetic images. Standard seed 0 uses Karina's complete
 validation/test/runtime bundle (`archive/standard_aug_10shot_seed0_original`); seeds 1–2
-use Artem's T4 runs, as recorded in `src/evaluation_selection.py`. The T4 seed-0 run remains
+use the standard-augmentation T4 runs, as recorded in `src/evaluation_selection.py`. The T4 seed-0 run remains
 an alternative covered by the earlier replay, not the final selected bundle.
 
 Final 10-shot test macro F1 (mean ± sample SD): real-only **54.82% ± 0.59 pp**,

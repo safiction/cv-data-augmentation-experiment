@@ -52,7 +52,7 @@ recomputed by the evaluation owner; no repeat export or model retuning is reques
 Original inference environment records remain unavailable, as documented in the evaluation
 report. This documentation work does not claim independent checkpoint inference replay.
 
-Artem's individual failure discussion is now included in
+The individual test-failure discussion is included in
 [the data section](data_report.md#individual-test-failure-analysis).
 The image was visually inspected and all paired 10-shot predictions were checked against
 the tracked gzip CSVs. The discussion separates observations from possible causes.

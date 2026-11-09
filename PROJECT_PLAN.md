@@ -90,13 +90,18 @@ Select checkpoints on validation macro F1. **Update — 27 October 2026:** the m
 
 Each member analyzes one test failure, writes their report section, and rehearses the demo. Completed matching core runs count toward the nine-run primary comparison; reference and diagnostic runs are tracked separately. Review active workload weekly; assign optional experiments only if capacity remains.
 
-**Reproducibility update — 2 November 2026:** Artem completed the offline artifact audit and reproduced all 3,000 standard-augmentation validation predictions on CPU after pinning Pillow 12.2.0. Arina's follow-up audit includes the locally imported baseline seeds 1–2 and Safina's three new 20-shot synthetic runs. Baseline/synthetic checkpoint replay and final test export remain to be completed by the checkpoint owner. See [docs/reproducibility.md](docs/reproducibility.md).
+**Reproducibility update — 2 November 2026:** the offline artifact audit is complete.
+All 3,000 standard-augmentation validation predictions were reproduced on CPU after
+pinning Pillow 12.2.0. The follow-up audit includes the imported baseline seeds 1–2 and
+three additional 20-shot synthetic runs. Baseline/synthetic checkpoint inference was
+not replayed. Test exports were subsequently completed, as recorded below.
+See [docs/reproducibility.md](docs/reproducibility.md).
 
-**Evaluation update — 3 November 2026:** test metrics, paired comparisons, runtime tables and figures are complete for **15/15 selected models**. Following Karina’s clarification, standard seed 0 uses her full validation/test/runtime bundle; seeds 1–2 use Artem’s T4 runs. No repeat test export or retraining is required. Three original failure photos and possible causes are included in the weekly report. Final presentation preparation remains; original inference metadata can be added if available. No models are retuned using test results.
+**Evaluation update — 3 November 2026:** test metrics, paired comparisons, runtime tables and figures are complete for **15/15 selected models**. Following Karina’s clarification, standard seed 0 uses her full validation/test/runtime bundle; seeds 1–2 use the standard-augmentation T4 runs. No repeat test export or retraining is required. Three original failure photos and possible causes are included in the weekly report. Final presentation preparation remains; original inference metadata can be added if available. No models are retuned using test results.
 
 
-**Artem — 10 November documentation deliverable (checked 9 November; no slides):**
-prepared the [data report section](docs/data_report.md), updated
+**Data and environment documentation — 10 November (checked 9 November; no slides):**
+Prepared the [data report section](docs/data_report.md), updated
 [README](README.md), and documented [environment setup](docs/environment.md) and archive
 restoration. Corrected stale loader/batch-order claims and synthetic-manifest replay paths.
 Reconciled documentation with the completed 15-run validation/test comparison and final
