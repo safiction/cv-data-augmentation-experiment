@@ -1,11 +1,11 @@
-# Artem — 10 November 2026 handoff
+# Data and environment handoff — 10 November 2026
 
 Prepared and checked on 9 November. Scope: data report section, README and environment;
 slides excluded as requested.
 
 ## Completed
 
-- [Data section](DATA_SECTION_2026-11-10.md): report-ready text covering the final dataset,
+- [Data section](data_report.md): report-ready text covering the final dataset,
   split, duplicate removal, paired subsets, transforms, synthetic class coverage and limitations.
   Includes the existing training-image preprocessing figure, links to evidence and an
   individual Red-winged Blackbird test-failure analysis checked against all nine selected
@@ -36,7 +36,7 @@ After synchronization with `main` at `f0ceaec`, the offline audit with
 `--require-complete` verifies **15 comparison runs, 0 errors**, with no missing primary runs.
 The final report uses Karina’s complete standard seed-0 bundle and T4 seeds 1–2; the
 source audit and earlier CPU replay retain their original T4 seed-0 scope. Environment versions and check outcomes are recorded
-in [the handoff evidence](../reports/artem_environment_2026-11-10.json).
+in [the handoff evidence](../reports/environment_verification.json).
 
 This check reused installed dependencies rather than testing a fresh clean-room installation.
 No training, new checkpoint inference, generation or classifier test scoring was performed.
@@ -53,7 +53,7 @@ Original inference environment records remain unavailable, as documented in the 
 report. This documentation work does not claim independent checkpoint inference replay.
 
 Artem's individual failure discussion is now included in
-[the data section](DATA_SECTION_2026-11-10.md#individual-test-failure-analysis).
+[the data section](data_report.md#individual-test-failure-analysis).
 The image was visually inspected and all paired 10-shot predictions were checked against
 the tracked gzip CSVs. The discussion separates observations from possible causes.
 Demo rehearsal remains a team activity and is not claimed complete by repository changes.

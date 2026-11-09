@@ -96,9 +96,9 @@ Each member analyzes one test failure, writes their report section, and rehearse
 
 
 **Artem — 10 November documentation deliverable (checked 9 November; no slides):**
-prepared the [data report section](docs/DATA_SECTION_2026-11-10.md), updated
+prepared the [data report section](docs/data_report.md), updated
 [README](README.md), and documented [environment setup](docs/environment.md) and archive
 restoration. Corrected stale loader/batch-order claims and synthetic-manifest replay paths.
 Reconciled documentation with the completed 15-run validation/test comparison and final
 standard seed-0 selection. Verification and the individual test-failure discussion are in
-[the 10 November handoff](docs/ARTEM_HANDOFF_2026-11-10.md). Demo rehearsal remains a team activity.
+[the 10 November handoff](docs/data_handoff.md). Demo rehearsal remains a team activity.

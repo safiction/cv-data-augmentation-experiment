@@ -97,7 +97,7 @@ Held-out images are used only for evaluation and duplicate exclusion, never prom
 species-quality review. Duplicate filtering compares synthetic images against validation/test
 without labels; it does not use classifier test scores.
 
-Details: [report-ready data section](docs/DATA_SECTION_2026-11-10.md),
+Details: [report-ready data section](docs/data_report.md),
 [split and leakage protocol](docs/data_split.md), [generation protocol](docs/generation.md).
 The older [EDA notebook](notebooks/eda.ipynb) uses the earlier 15% validation split;
 its split counts do not describe the final manifests.
@@ -215,4 +215,4 @@ A fresh clone supports the offline artifact audit without those archives. Origin
 runs remain distinct; final standard selection is Karina’s complete seed-0 bundle and T4 seeds 1–2.
 The earlier T4 seed-0 validation replay remains separate.
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for responsibilities and
-[the 10 November handoff](docs/ARTEM_HANDOFF_2026-11-10.md) for completed work and open dependencies.
+[the 10 November handoff](docs/data_handoff.md) for completed work and open dependencies.

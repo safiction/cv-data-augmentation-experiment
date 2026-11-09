@@ -1,4 +1,4 @@
-# Data and preprocessing — Artem, 10 November 2026
+# Data and preprocessing — 10 November 2026
 
 ## Report section
 
