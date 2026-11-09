@@ -1,240 +1,218 @@
 # Synthetic Data Augmentation with Diffusion Models
 
-**Status — 3 November 2026:** validation/test comparisons cover all 15 selected models. Standard seed 0 uses Karina’s complete validation/test/runtime bundle; seeds 1–2 use Artem’s T4 runs. No repeat run is required. See the [evaluation report](docs/WEEKLY_REPORT_2026-11-03.md) and [evaluation files](reports/evaluation_2026-11-03/README.md).
+Does diffusion-generated training data improve bird classification when real labeled data is limited?
+We compare real-only training, standard augmentation and reviewed diffusion images on all
+200 CUB-200-2011 species. The hypothesis is that correctly labeled synthetic images improve
+generalization; realistic images of the wrong species may hurt it.
 
-## Project Question
-Can diffusion-based synthetic data augmentation improve image classification performance when training data is limited, and under what conditions do synthetic samples help versus hurt?
-## ML Task
-Supervised image classification on a deliberately limited labeled dataset.
-We compare:
-• Baseline: classifier trained only on real images
-• Augmented: the same classifier trained on real + diffusion-generated synthetic images for selected classes
-Validation and test sets remain real-only, so performance is measured on real unseen data.
-## Main Hypothesis
-Adding high-quality diffusion-generated samples for underrepresented or data-scarce classes will improve classifier generalization on real unseen data compared with training on real data alone.
-## Main Comparison
-Real-only training vs. Real + synthetic training
-Keep the following fixed:
-• classifier architecture
-• training procedure
-• number of real training samples
-• validation/test data
-• evaluation metrics
-## Metrics
-• Macro F1
-• Per-class precision
-• Per-class recall
-• Per-class F1
-• Accuracy
-Macro F1 is especially useful because each class contributes equally to the final score.
-## Additional Research Question 1
-How does the ratio of synthetic to real training samples affect classifier performance?
-Possible ratios:
-• 0% synthetic
-• 25%
-• 50%
-• 100%
-• 200%
-This checks whether there is an optimal amount of synthetic augmentation and whether too much synthetic data starts to reduce performance.
-## Additional Research Question 2
-How do the quality and diversity of diffusion-generated images affect classifier performance?
-Investigate whether artifacts, low diversity, or unrealistic synthetic features cause the classifier to learn synthetic-specific shortcuts instead of useful class features.
+## Experiment and current status
 
+All primary runs use 10 real images per species, an ImageNet-pretrained ResNet-18 with
+frozen backbone/BatchNorm and a trainable 200-class head. Seeds 0–2 pair real subsets and
+classifier initialization across approaches. AdamW, batch size 64 and 1,000 optimizer steps
+are fixed; validation macro F1 selects checkpoints every 100 steps.
 
-## Data description summary
-Dataset: CUB-200-2011, 200 bird species, 11,788 images.
+| Primary approach | Real images | Added entries | Total | Available seeds |
+| --- | ---: | ---: | ---: | --- |
+| Real-only | 2,000 | 0 | 2,000 | 0, 1, 2 |
+| Standard augmentation | 2,000 | 2,000 fixed crop/flip views | 4,000 | 0, 1, 2 |
+| Reviewed synthetic | 2,000 | 1,440 generated images | 3,440 | 0, 1, 2 |
 
-| Split | Images | Per class |
-| --- | --- | --- |
-| train (pool for k-shot subsets) | 4,952 | 20–25 |
-| validation | 1,000 | 5 |
-| test (official CUB test) | 5,794 | 11–30 |
+As checked against `main` on **9 November 2026**, all nine primary runs and six
+20-shot references have validation and test results. The 20-shot groups compare 4,000 real
+images against 4,000 real + 1,440 synthetic images. Standard seed 0 uses Karina's complete
+validation/test/runtime bundle (`archive/standard_aug_10shot_seed0_original`); seeds 1–2
+use Artem's T4 runs, as recorded in `src/evaluation_selection.py`. The T4 seed-0 run remains
+an alternative covered by the earlier replay, not the final selected bundle.
 
-42 duplicate training images were removed, 30 of them copies of test images.
-Split reasoning, leakage check and preprocessing: [docs/data_split.md](docs/data_split.md).
+Final 10-shot test macro F1 (mean ± sample SD): real-only **54.82% ± 0.59 pp**,
+standard augmentation **55.25% ± 0.34 pp**, reviewed synthetic **52.25% ± 0.96 pp**.
+See the [evaluation report](docs/WEEKLY_REPORT_2026-11-03.md) and
+[evaluation files](reports/evaluation_2026-11-03/README.md) for paired comparisons,
+20-shot results, failure examples and provenance limits. The 20-shot reference uses twice
+as many real images and cannot isolate augmentation effects.
 
-## Download the data
-Run script:
+Macro F1 is primary; also report accuracy, per-class precision/recall/F1, paired changes
+and mean ± sample SD across seeds. Record generation and training costs separately with
+hardware. Controlled synthetic ratios, quality/diversity comparisons, 5-shot and fine-tuning
+remain optional research questions; the reviewed-pool comparison changes quality and quantity together.
+
+## Setup
+
+Run all commands from the repository root. Use Python 3.13 for the validated CPU replay:
+
 ```bash
-python src/load_data.py   # downloads and applies splits/cub_splits.csv
-python src/leakage.py     # optional: verify there are no duplicates across splits
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-replay.txt
 ```
 
-Data loaders (from `src/`); images per run are listed in `splits/manifests/`:
+On Windows, use `py -3.13 -m venv .venv` and activate with
+`.venv\Scripts\Activate.ps1`. The replay dependencies cover data loading, classifier training,
+evaluation and tests. Install `requirements.txt` for generation, figures and notebooks too.
+For GPU runs, install a matching CUDA-enabled torch/torchvision pair instead of the CPU
+wheels before installing dependencies. See [environment setup and troubleshooting](docs/environment.md).
+Pillow **12.2.0** is required for the validated image preprocessing; other builds previously
+changed validation predictions. These files pin direct replay dependencies, not a complete
+lock of every original training environment.
+
+## Data
+
+CUB-200-2011 contains 11,788 images of 200 bird species. The saved split removes 42 training
+duplicates, including 30 train copies of test photos, and preserves the official test set.
+
+| Split | Images | Per species |
+| --- | ---: | ---: |
+| Training pool | 4,952 | 20–25 |
+| Validation | 1,000 | 5 |
+| Official test | 5,794 | 11–30 |
+
+```bash
+python src/load_data.py
+python src/check_reproducibility.py --output outputs/reproducibility.json
+```
+
+The first command downloads `birder-project/CUB_200_2011` and saves the processed dataset
+under `data/processed/cub_200_2011/`. It applies tracked split IDs; do not regenerate splits
+for ordinary runs. The second command checks saved manifests and result artifacts offline.
+`--require-complete` requires all nine primary runs and now passes; the audit covers 15
+validation runs. It retains the original T4 seed-0 source-audit scope, while final reporting
+uses the selected bundle described above.
+
+`train_{5,10,20}shot_seed{0,1,2}.csv` manifests select balanced, nested real subsets;
+`train.csv`, `val.csv` and `test.csv` describe full splits. Labels are zero-based 0–199.
+The HF `validation/` image-ID prefix denotes the **official test set**, not our validation split.
+
+All original and synthetic images are converted to RGB, resized to a 256-pixel shorter side,
+center-cropped to 224 × 224 and normalized with fixed ImageNet statistics. The standard
+arm adds one fixed random resized crop (50–100% area) and possible horizontal flip per real
+image. These views are derived from image ID and seed and stay fixed across accesses/workers.
+Validation/test always use deterministic preprocessing and real images only.
+
+The reviewed synthetic pool has 1,440 images across 185 species, including 15 species with
+none. Review keeps `ok` and correct-species `artifact` images; quantities are therefore uneven.
+Held-out images are used only for evaluation and duplicate exclusion, never prompts or
+species-quality review. Duplicate filtering compares synthetic images against validation/test
+without labels; it does not use classifier test scores.
+
+Details: [report-ready data section](docs/DATA_SECTION_2026-11-10.md),
+[split and leakage protocol](docs/data_split.md), [generation protocol](docs/generation.md).
+The older [EDA notebook](notebooks/eda.ipynb) uses the earlier 15% validation split;
+its split counts do not describe the final manifests.
+
+## Verify and inspect data
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q -W error
+python src/preview_transforms.py
+```
+
+Tests need no network downloads. Seven processed-image checks skip if data is absent;
+run `load_data.py` first to include them. The preview needs matplotlib and writes
+`reports/figures/transforms_preview.jpg`. An optional image-level leakage recheck is
+`python src/leakage.py`; it needs processed images and ImageNet weights and rewrites the
+leakage report. The ordinary offline audit does not repeat embedding-based leakage detection.
+
+Loader example (with `src/` on Python's import path):
+
 ```python
 from preprocessing import get_loader
-train = get_loader("train", k_shot=10, seed=0, augment=True)  # 4,000 entries: 2,000 originals + 2,000 augmented
-val, test = get_loader("val"), get_loader("test")
-# batches: {"pixel_values": (B, 3, 224, 224), "label": (B,), "image_id": [B str]}
-```
-Class names by label: `load_data.class_names()`. Checks: `python -m pytest tests`.
-Transforms preview: `python src/preview_transforms.py` → `reports/figures/transforms_preview.jpg`.
 
-Reproducibility audit (offline, no training or test scoring):
-`python src/check_reproducibility.py --output outputs/reproducibility.json`.
-Add `--require-complete` to require all nine primary run artifacts; this check now passes.
-All 15 current comparison runs are audited. Verified evidence, replay commands and limitations:
-[docs/reproducibility.md](docs/reproducibility.md).
-For the validated CPU checkpoint replay, install `requirements-replay.txt`; Pillow 12.2.0
-reproduces all 3,000 standard-augmentation validation predictions from the original T4 runs.
-
-## Generate synthetic data
-Stable Diffusion 1.5, text-to-image from species names; needs a CUDA GPU (8 GB is enough) and the CUDA build of torch
-(on Windows plain `pip install torch` is CPU-only):
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
-python src/generate.py --pilot                   # 10 species x 5 images, data/synthetic/pilot_photo
-python src/review_synthetic.py --pool pilot_photo   # contact sheets, review table, val/test leakage check
-python src/generate.py --template wildlife --per-class 10   # full pool: 2,000 images, data/synthetic/sd15_wildlife
-```
-Each pool gets a manifest `splits/manifests/synthetic_{pool}.csv` (`image_id, label, class_name` + prompt, seed, time).
-Images are shared as a zip on Drive (unzip into `data/synthetic/`, then `python src/check_synthetic.py --pool sd15_wildlife`).
-Settings, seeds, review and acceptance rules: [docs/generation.md](docs/generation.md).
-
-EDA is available in __notebooks/eda.ipynb__ (run on the earlier 15% validation split)
-
-## Train the classifier
-
-The classifier is ImageNet-pretrained ResNet-18 with a frozen backbone and frozen BatchNorm
-statistics. Only a new 512-to-200 linear head is trained. The default real-only baseline uses
-`train_10shot_seed0.csv` (2,000 real images), deterministic preprocessing, and all 1,000 validation
-images. Training selects the best checkpoint by validation macro F1 and never evaluates test.
-
-From the project root, using the environment containing `requirements.txt` dependencies:
-
-```bash
-python src/train_classifier.py --seed 0
-python src/train_classifier.py --seed 0 --device cuda --amp --output outputs/baseline_gpu_seed0
+train = get_loader("train", k_shot=10, seed=0, augment=True, num_workers=0)
+val = get_loader("val", num_workers=0)
+# batch: pixel_values (B, 3, 224, 224), label (B,), image_id (list of strings)
 ```
 
-To isolate the training-preprocessing change, run a real-only full-image control with the same
-2,000 real images and training settings:
+## Train and evaluate
 
 ```bash
-python src/train_classifier.py --seed 0 --full-image --device cuda --amp
-```
-
-This saves `outputs/baseline_full_image_10shot_seed0`. It uses direct whole-image resizing to
-224 x 224 for training, documenting the earlier full-image preprocessing variant. There are no
-additional augmented/synthetic entries. Validation/test retain the shared resize/center-crop
-preprocessing. `--full-image` is a separate real-only control and cannot be combined with
-`--augment` or `--synthetic-manifest`.
-
-The default device is CUDA when available, otherwise CPU. `--device cuda` requires a CUDA-enabled
-PyTorch installation. AMP is optional and requires CUDA. The first training run downloads ImageNet
-weights if they are not cached. Data must already be saved with `python src/load_data.py`.
-
-Defaults are a starting configuration for validation pilots: AdamW, learning rate `0.001`, weight
-decay `0.0001`, batch size `64`, `1,000` optimizer steps, validation every `100` steps. These values
-are configurable; freeze the chosen settings and step budget across experimental arms.
-Use `--max-steps 2 --eval-every 2 --output outputs/pilot` for a short pipeline check (validation
-still uses the complete split). `--num-workers 0` is the portable default for Windows and notebooks.
-
-For standard augmentation, start a new run with `--augment`; this concatenates the real originals
-with one fixed augmented view per real image, doubling the dataset to 4,000 entries at 10 shots.
-The original half uses the baseline's resize-shorter-side-to-256 and center-crop-to-224 transform.
-Use the same seed and other settings.
-For the three paired subsets, repeat with `--seed 0`, `--seed 1`, and `--seed 2`. The optional
-`--k-shot 5` and `--k-shot 20` settings use the corresponding existing manifests.
-
-To train on all 4,952 real images in the training split, use `--all-train` instead of
-`--k-shot`. This reads `splits/manifests/train.csv`, keeps validation/test held out, and
-retains the default resize/center-crop preprocessing and 1,000-step training budget:
-
-```bash
-python src/train_classifier.py --all-train --seed 0 --device cuda --amp
-```
-
-The default output directory is `outputs/baseline_all_train_seed0`. Its configuration
-records `k_shot: null` and the full training-manifest hash.
-
-Each run creates a new output directory containing `config.json` (parameters, software/hardware,
-class mapping, source and manifest hashes), `history.csv`, `best.pt`, `runtime.json`, validation
-metrics, per-class precision/recall/F1, and predictions associated with image IDs. Existing output
-directories are rejected to preserve previous results. The runtime measures the training loop,
-periodic validation and checkpoint writes, excluding setup and final evaluation. Checkpoints
-support inference; exact interrupted-training resume is not implemented.
-
-Evaluate a saved checkpoint without downloading weights again:
-
-```bash
-python src/evaluate_classifier.py outputs/baseline_10shot_seed0/best.pt --output outputs/val_review
-# Run test only after all experimental settings and checkpoint choices are fixed.
-python src/evaluate_classifier.py outputs/baseline_10shot_seed0/best.pt --split test --output outputs/final_test_seed0
-```
-
-## Repeat the augmentation comparison
-
-Keep the same real subset and training settings as the baseline. The saved seed-0 baseline used
-10 shots per class, 1,000 optimizer steps, batch size 64, AdamW with learning rate 0.001 and
-weight decay 0.0001, validation every 100 steps, CUDA and AMP. The standard arm uses 2,000 real
-originals plus 2,000 fixed augmented views, one crop/flip version of each real image. Originals
-use resize-shorter-side-to-256 and center-crop-to-224 preprocessing, matching the original baseline.
-The real + synthetic arm appends up to 10 accepted generated images per class to
-the same real subset. Both real and generated images use the baseline's resize-shorter-side-to-256
-and center-crop-to-224 preprocessing, with no random crops/flips.
-The standard arm contains 4,000 entries; the real + synthetic arm contains up to 4,000,
-depending on how many generated images survive review and leakage filtering.
-Augmented views are recreated lazily using a seed derived from the image ID and run seed. The
-same augmented entry stays identical across accesses and workers; no extra JPG files are required.
-
-Extract the generated pool to `data/synthetic/sd15_wildlife/`, retaining `metadata.csv` and the
-200 CUB species directories. The metadata's image IDs are relative to `data/` without `.jpg`.
-The `sheets/` directory contains contact sheets and is excluded from training.
-
-```bash
-# Standard augmentation: 2,000 originals + 2,000 fixed crop/flip versions = 4,000 entries.
+# Each command creates a new directory; existing outputs are rejected.
+python src/train_classifier.py --seed 0 --device cuda --amp
 python src/train_classifier.py --seed 0 --augment --device cuda --amp
-
-# Validate labels, image decoding and generation MD5s; keep reviewed ok/artifact images;
-# drop val/test duplicates; take up to the first 10 per species, keeping partial species.
-python src/prepare_synthetic.py --device cuda --review reports/generation/review_sd15_wildlife.csv --per-class 10
-
-# Real + synthetic: 2,000 real plus up to 2,000 generated images, both resize + center crop.
-python src/train_classifier.py --seed 0 --device cuda --amp --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
-
-# Diffusion augmentation (plan arm): real + synthetic, plus one fixed crop/flip version of each = up to 8,000 entries.
-python src/train_classifier.py --seed 0 --device cuda --amp --augment --synthetic-manifest data/synthetic/sd15_wildlife/prepared/manifest.csv
+python src/train_classifier.py --seed 0 --device cuda --amp --synthetic-manifest data/synthetic/sd15_wildlife/prepared_accepted/manifest.csv
 ```
 
-Preparation writes a manifest with image SHA-256 hashes and `leakage_report.json` to a new
-`prepared/` directory. It checks MD5 equality and ResNet-18 embedding cosine similarity at the
-project's 0.93 threshold against real validation and test images, ignoring class labels. Matches
-are excluded and accepted counts are reported; this uses no classifier test metrics. With
-`--review`, only images with decision `ok` or `artifact` in the manual review table are kept
-(every pool image must be reviewed). After leakage filtering up to the first `--per-class` images of
-each species by image ID are selected, so rejected images are replaced by later seeds; species with
-fewer accepted images keep all remaining images. `leakage_report.json` records the actual selected
-counts by numeric label in `accepted_per_class`, including zeros, and lists all species below the
-target in `quality_review.species_below_target`. `quality_review.species_without_synthetic` lists
-only species with zero selected images (see the acceptance rules in `docs/generation.md`). Without `--review` the
-pool must have exactly `--expected-per-class` images per species and no review is applied.
+Repeat with seeds 1 and 2 for paired runs. Synthetic training requires the actual accepted
+image files under `data/synthetic/sd15_wildlife/`; the archived CSV alone is insufficient.
+Its manifest and leakage report are archived in `reports/generation/prepared_sd15_wildlife_accepted/`.
+Their image paths are relative to the original prepared directory; after restoring images,
+copy the two archived files back before training:
 
-Both comparison loaders shuffle the combined dataset. The standard arm has 4,000 entries;
-the real + synthetic arm has 2,000 real entries plus the actual selected synthetic count.
-Keep the optimizer-step budget fixed across
-arms, rather than the number of epochs. Both sources in real + synthetic training receive RGB
-conversion, aspect-ratio-preserving resize of the shorter side to 256, center crop to 224 x 224,
-tensor conversion and ImageNet normalization. The baseline, both arms' original halves,
-synthetic images and validation/test now share this deterministic preprocessing. The standard
-arm's additional 2,000 views retain their fixed random crops/flips. Compare both arms against
-the center-crop real-only baseline. The full-image control is a historical diagnostic reference.
-With `--augment --synthetic-manifest` (the plan's diffusion augmentation arm) synthetic images
-also get one fixed crop/flip version each, so the arm is the standard augmentation arm plus
-synthetic images. Validation/test remain real-only. Images are read lazily,
-and their hashes are verified before training. The run config records the synthetic manifest hash,
-total/original/augmented/synthetic image counts, augmentation policy and synthetic per-class counts.
+```bash
+mkdir -p data/synthetic/sd15_wildlife/prepared_accepted
+cp reports/generation/prepared_sd15_wildlife_accepted/manifest.csv data/synthetic/sd15_wildlife/prepared_accepted/
+cp reports/generation/prepared_sd15_wildlife_accepted/leakage_report.json data/synthetic/sd15_wildlife/prepared_accepted/
+```
 
-Default output directories are `outputs/standard_aug_10shot_seed0`,
-`outputs/real_synthetic_10shot_seed0` and `outputs/diffusion_aug_10shot_seed0`. Existing results are never overwritten; choose a new
-`--output` to rerun. Repeat with seeds 1 and 2 when extending the paired comparison, including a
-matching real-only baseline for each seed. The synthetic pool is reused across seeds.
+Do this restoration before running the synthetic command above. On Windows use equivalent
+PowerShell `New-Item -ItemType Directory -Force` and `Copy-Item` commands.
+Default outputs are `outputs/baseline_10shot_seed0`, `outputs/standard_aug_10shot_seed0`
+and `outputs/real_synthetic_10shot_seed0`.
 
-Regression checks run offline with `python -m unittest discover -s tests -v`; they do not require
-ImageNet downloads.
+Without a GPU, use `--device cpu` and omit `--amp`. A pipeline smoke check can use
+`--max-steps 2 --eval-every 2 --output outputs/pilot`; it still evaluates all validation images
+and is not a comparison run. The first training run downloads ImageNet weights unless cached.
 
-Main observations:
-- There is almost no class disbalance in the dataset, no missing images.
-- Some pictures are in a grayscale, so need to convert them to RGB during training
-- Image size is different, so need to resize or crop
-- 2 duplicate images found by md5; an embedding search found 64 duplicate pairs in total (see docs/data_split.md)
+Runs save configuration (including source/input hashes and hardware/software), history,
+`best.pt`, runtime, validation metrics, per-class results and image-level predictions.
+Training never computes test scores. Checkpoints support inference, not exact interrupted-training resume.
+
+```bash
+python src/evaluate_classifier.py outputs/baseline_10shot_seed0/best.pt --split val --device cpu --output outputs/val_review
+```
+
+The supplied test predictions are already stored as `reports/test/<run>/test_predictions.csv.gz`.
+Recompute their metrics with `python src/report_test_results.py` (requires matplotlib).
+No repeat export is needed for this deliverable. For a separately authorized inference replay,
+use `--split test` and a fresh output directory with the corresponding selected checkpoint.
+The original inference environment records are unavailable; matching CSVs and checkpoint
+metadata do not independently prove inference provenance.
+The existing [CPU replay evidence](docs/reproducibility.md) confirms all 3,000 standard-arm
+validation predictions match the saved T4 results; full retraining was not verified.
+
+Supplementary controls: `--k-shot 20` for more real data, `--all-train` for the full real pool,
+and `--full-image` for direct 224 × 224 training resizing. The full-image control cannot be
+combined with added images. Combining `--augment --synthetic-manifest ...` adds fixed views
+of both real and synthetic images (6,880 entries for the reviewed pool); it is an optional
+combined arm, not the primary reviewed-synthetic experiment.
+
+## Generate and review synthetic images
+
+Install `requirements.txt` and CUDA-enabled PyTorch. Restore existing image archives instead
+of regenerating them when reproducing the recorded classifier runs.
+
+```bash
+python src/generate.py --pilot
+python src/review_synthetic.py --pool pilot_photo
+python src/generate.py --template wildlife --per-class 10
+python src/check_synthetic.py --pool sd15_wildlife
+python src/prepare_synthetic.py --device cuda --review reports/generation/review_sd15_wildlife.csv --per-class 10
+```
+
+Generation uses Stable Diffusion 1.5, species-name text prompts, 512 × 512 images and FP16
+on CUDA. Review each pool image before preparation. Preparation validates image hashes,
+keeps `ok`/`artifact` decisions, removes held-out duplicates and selects up to 10 accepted
+images per species, retaining partial species. It creates a new prepared directory and a
+leakage report; use the emitted manifest path for a new training run. Check
+[the generation instructions](docs/generation.md) for pool layout, review rules and seeds.
+
+## Repository and handoff
+
+| Path | Contents |
+| --- | --- |
+| `src/` | Data, training, generation, evaluation and audit scripts |
+| `splits/` | Fixed split IDs, removed duplicates and per-run manifests |
+| `tests/` | Split, loader, augmentation, classifier and audit checks |
+| `reports/classifier/` | Small saved validation artifacts; see its README for run identities |
+| `reports/generation/` | Reviews, prepared manifest and leakage evidence |
+| `docs/` | Protocols, report sections, environment and reproducibility evidence |
+| `data/`, `outputs/` | Ignored local images, checkpoints and replay outputs |
+
+Checkpoints and image archives are stored outside Git; obtain them from the team for replay.
+A fresh clone supports the offline artifact audit without those archives. Original/repeated
+runs remain distinct; final standard selection is Karina’s complete seed-0 bundle and T4 seeds 1–2.
+The earlier T4 seed-0 validation replay remains separate.
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for responsibilities and
+[the 10 November handoff](docs/ARTEM_HANDOFF_2026-11-10.md) for completed work and open dependencies.

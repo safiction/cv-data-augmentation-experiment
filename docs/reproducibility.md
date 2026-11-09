@@ -121,7 +121,11 @@ Each verified run's JSON entry contains a `training_command` with explicit seed,
 augmentation, training settings and a fresh `outputs/reproduction/<run>` directory.
 These commands require processed CUB images, cached/downloadable ImageNet weights and a
 CUDA GPU. Reviewed synthetic runs also require the accepted images under `data/synthetic/`;
-the archived manifest can be passed directly to `--synthetic-manifest`. Existing output
+restore the archived manifest and leakage report to
+`data/synthetic/sd15_wildlife/prepared_accepted/` and pass that manifest to
+`--synthetic-manifest`. Its image paths are relative to its directory; the audit-generated
+command using the archive alias in `reports/` needs this path substitution for training
+(see [README restoration commands](../README.md#train-and-evaluate)). Existing output
 directories are rejected by training; choose another output name for subsequent replays.
 
 Historical baseline seed 0 stores raw Windows CRLF hashes for its data files. The audit

@@ -108,15 +108,17 @@ shared image ids (`reports/leakage_report.json`).
 
 - *ImageNet pretraining.* The CUB authors warn that CUB images overlap with ImageNet. The ResNet-18
   backbone may have seen some test photos, inflating absolute scores. All arms share the backbone,
-  so differences between arms remain valid; absolute numbers should be read with this caveat.
+  which controls this experimental factor but does not remove potential pretraining overlap
+  or guarantee that the observed differences generalize.
 - *Stable Diffusion training data.* SD 1.5 was trained on web images and can reproduce CUB photos.
   Before training, run `python src/prepare_synthetic.py --device cuda`. It validates the generated
   metadata and images, checks the synthetic pool against val and test with
   `leakage.duplicate_pairs` (labels ignored), and writes a manifest excluding matches. Its
   `leakage_report.json` records the threshold, matches and accepted counts. See README for the
   mixed-training command and expected pool layout.
-- *Process.* Val and test images are never used for prompts, generation or synthetic-image
-  selection. Normalization uses fixed ImageNet statistics, not statistics of our data.
+- *Process.* Val and test images are never used for prompts, generation or species-quality
+  review. They are used only for evaluation and the duplicate-exclusion checks above;
+  classifier test scores never guide synthetic selection. Normalization uses fixed ImageNet statistics, not statistics of our data.
 
 ## Preprocessing
 
@@ -143,8 +145,10 @@ The originals use the same resize/center-crop transform as the original real-onl
 Real + synthetic training uses the baseline deterministic transform on both sources: RGB conversion,
 aspect-ratio-preserving resize of the shorter side to 256, center crop to 224 x 224, tensor conversion
 and ImageNet normalization. It applies no random crops/flips. Its real original views now match
-the standard arm's originals, baseline and evaluation. The loader rejects `augment=True` with a
-synthetic manifest.
+the standard arm's originals, baseline and evaluation. The primary reviewed-synthetic arm uses `augment=False`. The loader also supports the
+optional `augment=True` with a synthetic manifest, adding one fixed crop/flip view to every
+real and synthetic source; this produces 6,880 entries for the reviewed pool and is not
+the primary comparison.
 
 The real-only `full_image=True` control keeps exactly the original manifest entries while using
 direct whole-image resizing for a historical preprocessing diagnostic. It applies only to training and cannot be
@@ -171,9 +175,10 @@ folder name, `load_data.NUM_CLASSES == 200`.
 
 Loaders:
 
-- **train** shuffles with a generator seeded by `seed`. Both comparison arms contain the same
-  2,000 original source IDs followed by 2,000 additional entries, so the same seed pairs their source
-  positions and batch order. Augmented versions are fixed per image and seed regardless of access
+- **train** shuffles with a generator seeded by `seed`. Both primary augmentation arms share
+  the same 2,000 real source IDs, but their total entry counts differ (4,000 standard versus
+  3,440 reviewed synthetic). Equal seeds therefore do not imply identical batch order or
+  real-image exposure across these arms. Augmented versions are fixed per image and seed regardless of access
   order or worker count, and preserve the caller's torch RNG state.
 - **val/test** are not shuffled and use the deterministic transform.
 - `get_dataset(...)` returns the same data without the loader, e.g. for a custom sampler.
