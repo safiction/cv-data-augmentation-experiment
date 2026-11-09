@@ -1,8 +1,8 @@
-# Reproducibility verification — Artem, 3 November 2026
+# Reproducibility verification — 3 November 2026
 
 ## Test archive update — 3 November 2026
 
-The supplied archives provide 17 distinct test CSVs: **15 selected runs and two historical diagnostics**. All contain the exact 5,794 test IDs/labels, and metrics have been recomputed. Following Karina’s clarification, standard seed 0 now uses her complete validation/test/runtime bundle (`archive/standard_aug_10shot_seed0_original`); seeds 1–2 use Artem’s T4 runs. All 15 selected checkpoint files are available locally. No repeat export or training is required.
+The supplied archives provide 17 distinct test CSVs: **15 selected runs and two historical diagnostics**. All contain the exact 5,794 test IDs/labels, and metrics have been recomputed. Following Karina’s clarification, standard seed 0 now uses her complete validation/test/runtime bundle (`archive/standard_aug_10shot_seed0_original`); seeds 1–2 use the standard-augmentation T4 runs. All 15 selected checkpoint files are available locally. No repeat export or training is required.
 
 The selected seed-0 validation predictions, metrics and checkpoint selection were checked, and its weights match the saved configuration and validation F1. The source audit and CPU replay below retain their original scope: they cover T4 seed 0, not Karina’s different recorded source version. They must not be cited as source verification or replay of the replacement. The current report selection is recorded in `src/evaluation_selection.py`.
 
@@ -27,7 +27,7 @@ records SHA-256 and verifies embedded config, selected step and saved validation
 20-shot checkpoints are not available locally. This metadata check is not an inference replay
 or a team freeze. No test predictions are available in the checked repository or local outputs.
 
-The original audit below is retained as a dated record of what Artem verified against
+The original audit below is retained as a dated record of the verification against
 `cd7d07a`; its missing-baseline statements describe that earlier snapshot only.
 
 ## Original audit — snapshot at `cd7d07a`
@@ -121,7 +121,11 @@ Each verified run's JSON entry contains a `training_command` with explicit seed,
 augmentation, training settings and a fresh `outputs/reproduction/<run>` directory.
 These commands require processed CUB images, cached/downloadable ImageNet weights and a
 CUDA GPU. Reviewed synthetic runs also require the accepted images under `data/synthetic/`;
-the archived manifest can be passed directly to `--synthetic-manifest`. Existing output
+restore the archived manifest and leakage report to
+`data/synthetic/sd15_wildlife/prepared_accepted/` and pass that manifest to
+`--synthetic-manifest`. Its image paths are relative to its directory; the audit-generated
+command using the archive alias in `reports/` needs this path substitution for training
+(see [README restoration commands](../README.md#train-and-evaluate)). Existing output
 directories are rejected by training; choose another output name for subsequent replays.
 
 Historical baseline seed 0 stores raw Windows CRLF hashes for its data files. The audit
@@ -139,7 +143,7 @@ Use the current checkout for the other commands, whose recorded training-source 
 match it. The old snapshot has different loader/config bookkeeping, so a current-code
 baseline rerun must be identified as a new run.
 
-## CPU validation replay of Artem's checkpoints — resolved
+## CPU validation replay of the standard-augmentation checkpoints — resolved
 
 All three original standard-augmentation `best.pt` files were available locally. Their
 embedded configurations, selected steps and validation-selection scores match the tracked
