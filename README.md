@@ -178,6 +178,78 @@ combined with added images. Combining `--augment --synthetic-manifest ...` adds 
 of both real and synthetic images (6,880 entries for the reviewed pool); it is an optional
 combined arm, not the primary reviewed-synthetic experiment.
 
+## Smoke-test all three setups
+
+Open [notebooks/smoke_experiment.ipynb](notebooks/smoke_experiment.ipynb), select the project's
+`.venv` Python kernel, and run its cells from top to bottom. The notebook shows same-species
+real/generated pairs immediately after generation, original/baseline/fixed-augmentation views,
+live loss/validation accuracy/macro F1 charts after each validation checkpoint, test comparison
+charts, and galleries of five wrong predictions with image links. Progress bars and count
+messages remain visible throughout. Figures are also saved as PNGs.
+The setup cell refreshes cached project modules in dependency order; rerun it after editing
+local helpers so loaders and visualizations pick up the same version of the code.
+
+Each new notebook run generates a fresh pool of 200 images with new generation seeds, and
+writes its results to a new `outputs/notebook_smoke_<id>/` directory. The seed offset is recorded
+in `smoke_config.json` for reproducibility; the previous script's pool is never selected automatically.
+Notebook defaults use **20 optimizer steps, validating every 5 steps** so
+curves have four points; choose 2 steps / validation every 2 to match the shortest script run.
+The standard augmentation smoke setup adds **200 fixed views** (`AUGMENT_PER_CLASS = 1`),
+one real photo per species selected by image ID. It retains all 2,000 original real photos,
+for 2,200 training entries. The generated setup adds 200 generated images before filtering.
+All other comparison rules remain the same. Rerunning individual cells within the same run resumes
+generation or reuses completed stages with matching settings; rerunning the settings cell starts
+a fresh run. Set a fixed `RUN_DIR` explicitly to resume a run after restarting the kernel.
+
+The command-line alternative remains available:
+
+Generate a small synthetic pool, prepare it with the existing integrity/leakage checks, train
+real-only, real + generated, and real + standard augmentation classifiers, then predict the
+complete real test set:
+
+```bash
+python src/smoke_experiment.py --device cuda --amp
+```
+
+Console progress bars show the nine overall stages, generated images and diffusion steps,
+synthetic integrity/leakage checks, classifier optimizer steps with training loss, and
+validation/test batches. Bars include elapsed time, processing rate, and estimated time remaining.
+
+Run `python src/load_data.py` first if the real dataset is not saved locally. The environment
+needs the dependencies in `requirements.txt`, including `diffusers`, `transformers`, and `accelerate`.
+Diffusion uses CUDA automatically; CPU generation requires `--allow-cpu-generation` and is slow.
+The first run may download Stable Diffusion and ImageNet weights.
+
+Defaults are 10 real images per class, one newly generated image for each of the 200 species,
+25 diffusion steps, and **two optimizer steps per classifier**. All setups share the same real
+subset, seed, architecture, optimizer settings, and step budget. Standard augmentation adds one
+fixed crop/flip view per species by default (200 views), retaining all 2,000 real training images.
+Use `--augment-per-class` to change this count. Views use the existing lazy loader; no extra augmented
+JPGs are needed. Every setup selects its best checkpoint by validation macro F1, and all three
+training runs finish before test evaluation begins. Validation and test use their full manifests.
+The default scores check the pipeline, rather than establish a final comparison.
+
+Results go to a new `outputs/smoke/` directory:
+
+- `summary.md`: comparison table and clickable links to five misclassified test images per setup,
+  with true and predicted species (all available errors if fewer than five).
+- `metrics_summary.csv`: test accuracy, macro F1, loss, and image counts for each setup.
+- `<setup>/train/`: the existing training artifacts, including `best.pt` and validation results.
+- `<setup>/test/`: all test predictions, metrics, per-class precision/recall/F1,
+  `wrong_predictions.csv` with local image URLs, and exported error images in `wrong_predictions/`.
+- `smoke_config.json` and `prepared_synthetic/`: run settings and the checked synthetic manifest
+  with its leakage report. Generated originals stay in `data/synthetic/<pool>/`.
+
+The console also prints the error-image URLs. Errors are chosen in test-manifest order.
+Fresh smoke pools are not manually reviewed; use `--pool <name> --review <review.csv>` to apply
+an existing pool's species review. Generation resumes through the existing generator's settings
+checks; an unreviewed reused pool must have exactly `--per-class` images per species.
+Existing output directories are rejected. For a larger paired run, for example:
+
+```bash
+python src/smoke_experiment.py --device cuda --amp --per-class 10 --augment-per-class 10 --max-steps 1000 --eval-every 100 --output outputs/three_setup_comparison
+```
+
 ## Generate and review synthetic images
 
 Install `requirements.txt` and CUDA-enabled PyTorch. Restore existing image archives instead

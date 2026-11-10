@@ -28,6 +28,11 @@ ALIASES = {f"data/synthetic/sd15_wildlife/prepared_accepted/{name}": f"{SYNTHETI
 # bytes against the actual Git snapshot, rather than accepting arbitrary drift.
 BASELINE_REV = "8f4050fee9c8265f3bf40b41b110001e99f81f23"
 LEGACY_SOURCES = ("src/train_classifier.py", "src/preprocessing.py")
+# Smoke helpers changed these files after the saved experiments. Accept only this
+# exact source transition, and verify the recorded bytes in the pre-smoke snapshot.
+PRE_SMOKE_REV = "466979b66f7bf3900e563e954f660f59ce2af189"
+SMOKE_REV = "0b034b7efdb3c721694043fc4328765979585986"
+SMOKE_SOURCES = (*LEGACY_SOURCES, "src/classifier.py", "src/prepare_synthetic.py")
 
 
 def require(condition, message):
@@ -121,12 +126,19 @@ def check_hashes(root, run, config):
         if matching_hash(path.read_bytes(), expected):
             checked[source] = {"status": "match", "path": path.relative_to(root).as_posix()}
             continue
-        require(run == "baseline_seed0" and source in LEGACY_SOURCES, f"Hash mismatch: {source}")
-        historical = subprocess.run(["git", "show", f"{BASELINE_REV}:{source}"], cwd=root,
+        if run == "baseline_seed0" and source in LEGACY_SOURCES:
+            revision = BASELINE_REV
+        else:
+            require(source in SMOKE_SOURCES, f"Hash mismatch: {source}")
+            updated = subprocess.run(["git", "show", f"{SMOKE_REV}:{source}"], cwd=ROOT,
+                                     capture_output=True, check=True).stdout
+            require(matching_hash(path.read_bytes(), digest(updated)), f"Hash mismatch: {source}")
+            revision = PRE_SMOKE_REV
+        historical = subprocess.run(["git", "show", f"{revision}:{source}"], cwd=ROOT,
                                     capture_output=True, check=True).stdout
         require(matching_hash(historical, expected), f"Historical hash mismatch: {source}")
-        checked[source] = {"status": "historical_match", "git_revision": BASELINE_REV}
-        warnings.append(f"{source} matches historical commit {BASELINE_REV}, not current code")
+        checked[source] = {"status": "historical_match", "git_revision": revision}
+        warnings.append(f"{source} matches historical commit {revision}, not current code")
     if "splits/manifests/test.csv" not in hashes:
         warnings.append("Legacy test manifest is verified through the saved cub_splits.csv hash")
     return checked, warnings
@@ -224,7 +236,7 @@ def audit(root=ROOT):
         "Image pixels and embedding/MD5 leakage detection were not rerun; only saved IDs, hashes and records were checked",
         "Loss is checked against history; predictions contain no logits to recompute cross-entropy",
         "Hardware/software differ between runs; identical seeds do not establish bitwise GPU reproducibility",
-        "Historical baseline source needs the recorded Git snapshot for an exact source replay",
+        "Historical training sources need their recorded Git snapshots for an exact source replay",
     ]
     report["status"] = "failed" if report["errors"] else "passed_with_limitations"
     return report

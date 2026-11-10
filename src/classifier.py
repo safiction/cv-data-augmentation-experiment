@@ -8,6 +8,7 @@ import torch
 from sklearn.metrics import accuracy_score, classification_report, f1_score
 from torch import nn
 from torchvision.models import ResNet18_Weights, resnet18
+from tqdm.auto import tqdm
 
 NUM_CLASSES = 200
 
@@ -76,13 +77,14 @@ def class_names_from_manifest(manifest):
 
 
 @torch.no_grad()
-def evaluate(model, loader, device):
+def evaluate(model, loader, device, progress_desc="Evaluating", progress_position=0):
     """Compute metrics once over the entire split, including the last partial batch."""
     model.eval()
     criterion = nn.CrossEntropyLoss(reduction="sum")
     loss_sum = 0.0
     truth, predictions = [], []
-    for batch in loader:
+    for batch in tqdm(loader, desc=progress_desc, unit="batch", dynamic_ncols=True,
+                      position=progress_position, leave=progress_position == 0):
         images = batch["pixel_values"].to(device, non_blocking=True)
         labels = batch["label"].to(device, non_blocking=True)
         logits = model(images)

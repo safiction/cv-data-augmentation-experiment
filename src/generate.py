@@ -4,7 +4,7 @@ Only species names go into the generator, no real photos, so val/test cannot rea
 generation. SD was trained on web images and may still reproduce CUB photos; review_synthetic.py
 checks the pool against val/test with the detectors from leakage.py.
 
-Each image has its own seed, SEED_OFFSET + 1000 * label + index, drawn on a CPU generator so it
+Each image has its own seed, seed_offset + 1000 * label + index (default offset 10000), drawn on a CPU generator so it
 does not depend on the GPU model or the batch size. Any image can be regenerated alone, and pools
 are nested like the k-shot subsets: --per-class 20 keeps the 10 images of --per-class 10 and adds
 10 more. The script resumes: images already in the pool's metadata are skipped, so it can be
@@ -35,6 +35,7 @@ import time
 import pandas as pd
 import torch
 from diffusers import DPMSolverMultistepScheduler, StableDiffusionPipeline
+from tqdm.auto import tqdm
 
 from load_data import DATA_DIR, load_splits, manifest_path
 from prompts import NEGATIVE_PROMPT, TEMPLATES, prompt_for
@@ -60,8 +61,8 @@ PILOT_PER_CLASS = 5
 POOL_SETTINGS = ["template", "model", "steps", "guidance", "dtype"]
 
 
-def seed_for(label, index):
-    return SEED_OFFSET + 1000 * label + index
+def seed_for(label, index, seed_offset=SEED_OFFSET):
+    return seed_offset + 1000 * label + index
 
 
 def image_id_for(pool, class_name, index):
@@ -82,7 +83,8 @@ def load_pipeline(model_id, device, dtype):
         requires_safety_checker=False,
     )
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-    pipe.set_progress_bar_config(disable=True)
+    pipe.set_progress_bar_config(disable=False, desc="Diffusion steps", leave=False,
+                                 position=1, dynamic_ncols=True)
     return pipe.to(device)
 
 
@@ -91,8 +93,10 @@ def device_name():
 
 
 def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODEL_ID,
-             steps=STEPS, guidance=GUIDANCE, allow_cpu=False):
+             steps=STEPS, guidance=GUIDANCE, allow_cpu=False, seed_offset=SEED_OFFSET):
     """Generate the missing images of a pool and append their rows to its metadata.csv."""
+    if seed_offset < 0:
+        raise ValueError("seed_offset must be nonnegative")
     labels = dict(load_splits()[["class_name", "label"]].drop_duplicates().to_numpy())
     unknown = set(class_names) - set(labels)
     if unknown:
@@ -113,6 +117,11 @@ def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODE
             if old != [settings[key]]:
                 raise ValueError(f"pool {pool} was generated with {key}={old}, "
                                  f"not {settings[key]}; use another --pool or delete the pool")
+        # The offset is recoverable from existing per-image seeds, including legacy pools.
+        indices = meta["image_id"].str.rsplit("_", n=1).str[-1].astype(int)
+        offsets = meta["seed"] - 1000 * meta["label"] - indices
+        if not (offsets == seed_offset).all():
+            raise ValueError(f"pool {pool} was generated with another seed offset; use another --pool")
         done = {i for i in meta["image_id"] if synthetic_path(i).exists()}
 
     todo = [(labels[c], c, k) for c in class_names for k in range(per_class)
@@ -123,38 +132,40 @@ def generate(pool, class_names, per_class, template, batch_size=1, model_id=MODE
 
     pipe = load_pipeline(model_id, device, dtype)
     gpu = device_name()
-    for start in range(0, len(todo), batch_size):
-        batch = todo[start:start + batch_size]
-        prompts = [prompt_for(c, template) for _, c, _ in batch]
-        seeds = [seed_for(label, k) for label, _, k in batch]
+    with tqdm(total=len(todo), desc=f"Generating {pool}", unit="image", dynamic_ncols=True) as progress:
+        for start in range(0, len(todo), batch_size):
+            batch = todo[start:start + batch_size]
+            prompts = [prompt_for(c, template) for _, c, _ in batch]
+            seeds = [seed_for(label, k, seed_offset) for label, _, k in batch]
 
-        t0 = time.perf_counter()
-        images = pipe(
-            prompts,
-            negative_prompt=[NEGATIVE_PROMPT] * len(batch),
-            num_inference_steps=steps,
-            guidance_scale=guidance,
-            height=SIZE,
-            width=SIZE,
-            generator=[torch.Generator("cpu").manual_seed(s) for s in seeds],
-        ).images
-        seconds = (time.perf_counter() - t0) / len(batch)
+            t0 = time.perf_counter()
+            images = pipe(
+                prompts,
+                negative_prompt=[NEGATIVE_PROMPT] * len(batch),
+                num_inference_steps=steps,
+                guidance_scale=guidance,
+                height=SIZE,
+                width=SIZE,
+                generator=[torch.Generator("cpu").manual_seed(s) for s in seeds],
+            ).images
+            seconds = (time.perf_counter() - t0) / len(batch)
 
-        rows = []
-        for (label, class_name, k), prompt, seed, img in zip(batch, prompts, seeds, images):
-            image_id = image_id_for(pool, class_name, k)
-            path = synthetic_path(image_id)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            img.save(path, quality=JPEG_QUALITY)
-            rows.append({
-                "image_id": image_id, "label": label, "class_name": class_name,
-                "prompt": prompt, "negative_prompt": NEGATIVE_PROMPT, "seed": seed, **settings,
-                "scheduler": type(pipe.scheduler).__name__, "size": SIZE, "batch_size": batch_size,
-                "gen_time_s": round(seconds, 3), "device": gpu,
-                "md5": hashlib.md5(path.read_bytes()).hexdigest(),
-            })
-        pd.DataFrame(rows).to_csv(meta_path, mode="a", header=not meta_path.exists(), index=False)
-        print(f"  {start + len(batch)}/{len(todo)}  {seconds:.2f} s/image")
+            rows = []
+            for (label, class_name, k), prompt, seed, img in zip(batch, prompts, seeds, images):
+                image_id = image_id_for(pool, class_name, k)
+                path = synthetic_path(image_id)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                img.save(path, quality=JPEG_QUALITY)
+                rows.append({
+                    "image_id": image_id, "label": label, "class_name": class_name,
+                    "prompt": prompt, "negative_prompt": NEGATIVE_PROMPT, "seed": seed, **settings,
+                    "scheduler": type(pipe.scheduler).__name__, "size": SIZE, "batch_size": batch_size,
+                    "gen_time_s": round(seconds, 3), "device": gpu,
+                    "md5": hashlib.md5(path.read_bytes()).hexdigest(),
+                })
+            pd.DataFrame(rows).to_csv(meta_path, mode="a", header=not meta_path.exists(), index=False)
+            progress.set_postfix_str(f"{seconds:.2f} s/image", refresh=False)
+            progress.update(len(batch))
 
 
 def write_manifest(pool):
@@ -188,6 +199,8 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=STEPS)
     parser.add_argument("--guidance", type=float, default=GUIDANCE)
     parser.add_argument("--model", default=MODEL_ID)
+    parser.add_argument("--seed-offset", type=int, default=SEED_OFFSET,
+                        help="Base generation seed; use a new pool and offset for different images")
     parser.add_argument("--allow-cpu", action="store_true", help="run without CUDA (fp32, very slow)")
     return parser.parse_args()
 
@@ -199,7 +212,7 @@ if __name__ == "__main__":
     pool = args.pool or f"{'pilot' if args.pilot else 'sd15'}_{args.template}"
 
     generate(pool, class_names, per_class, args.template, args.batch_size, args.model,
-             args.steps, args.guidance, args.allow_cpu)
+             args.steps, args.guidance, args.allow_cpu, seed_offset=args.seed_offset)
     meta, path = write_manifest(pool)
     report_cost(meta)
     print("Manifest:", path.relative_to(path.parents[2]))

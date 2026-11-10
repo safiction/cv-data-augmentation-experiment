@@ -5,7 +5,9 @@ import shutil
 
 import pytest
 
-from check_reproducibility import ROOT, audit, check_splits, main, matching_hash, planned_runs
+from check_reproducibility import (
+    PRE_SMOKE_REV, ROOT, audit, check_splits, main, matching_hash, planned_runs,
+)
 
 RUN = "standard_aug_10shot_seed0_t4"
 
@@ -41,6 +43,10 @@ def test_available_valid_run_is_distinct_from_complete_matrix(snapshot):
     report = audit(snapshot)
     assert not report["errors"]
     assert [r["run"] for r in report["runs"]] == [RUN]
+    for source in ("src/train_classifier.py", "src/classifier.py", "src/preprocessing.py"):
+        assert report["runs"][0]["input_hashes"][source] == {
+            "status": "historical_match", "git_revision": PRE_SMOKE_REV,
+        }
     assert len(report["missing_primary_runs"]) == 8
     assert len(report["missing_reference_runs"]) == 6
 
@@ -79,10 +85,19 @@ def test_rejects_edited_per_species_metrics(snapshot):
     assert "incorrect per-class metrics" in audit(snapshot)["errors"][0]
 
 
-def test_rejects_source_drift(snapshot):
-    with (snapshot / "src/preprocessing.py").open("a") as stream:
+@pytest.mark.parametrize("source", ["src/train_classifier.py", "src/classifier.py", "src/preprocessing.py"])
+def test_rejects_source_drift(snapshot, source):
+    with (snapshot / source).open("a") as stream:
         stream.write("\n# changed policy\n")
-    assert "Hash mismatch: src/preprocessing.py" in audit(snapshot)["errors"][0]
+    assert f"Hash mismatch: {source}" in audit(snapshot)["errors"][0]
+
+
+def test_rejects_changed_historical_source_hash(snapshot):
+    path = snapshot / "reports/classifier" / RUN / "config.json"
+    config = json.loads(path.read_text())
+    config["sha256"]["src/classifier.py"] = "0" * 64
+    path.write_text(json.dumps(config))
+    assert "Historical hash mismatch: src/classifier.py" in audit(snapshot)["errors"][0]
 
 
 def test_rejects_missing_artifact_and_missing_recorded_hash(snapshot):

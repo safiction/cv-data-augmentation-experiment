@@ -48,7 +48,7 @@ python src/check_reproducibility.py --require-complete
 ```
 
 The checker uses only Python's standard library and the tracked CSV/JSON artifacts.
-It needs Git history for the original baseline source check; a shallow clone may need
+It needs Git history for the recorded training-source checks; a shallow clone may need
 `git fetch --unshallow`. The default exits successfully when all available planned runs
 pass. Missing runs remain explicit in the report. `--require-complete` additionally exits
 with status 1 until all nine primary runs are present and valid. It currently fails for
@@ -139,9 +139,19 @@ git worktree add --detach ../cub-baseline-replay 8f4050fee9c8265f3bf40b41b110001
 ```
 
 Restore processed data in that checkout and use the JSON command for `baseline_seed0` there.
-Use the current checkout for the other commands, whose recorded training-source hashes
-match it. The old snapshot has different loader/config bookkeeping, so a current-code
-baseline rerun must be identified as a new run.
+For the other saved runs, the recorded training-source hashes match the pre-smoke snapshot
+`466979b66f7bf3900e563e954f660f59ce2af189`. The smoke pipeline changes classifier progress
+reporting, training callbacks, augmentation selection and synthetic preparation. The audit
+accepts that exact update from `0b034b7efdb3c721694043fc4328765979585986`, verifies the
+recorded hashes against the pre-smoke snapshot, and reports `historical_match` with its
+revision. Further changes to those files still fail the audit. For an exact source replay:
+
+```bash
+git worktree add --detach ../cub-training-replay 466979b66f7bf3900e563e954f660f59ce2af189
+```
+
+Current-code reruns must be identified as new runs; matching historical source hashes does
+not verify retraining with the smoke helpers.
 
 ## CPU validation replay of the standard-augmentation checkpoints — resolved
 
