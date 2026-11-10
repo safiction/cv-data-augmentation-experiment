@@ -11,7 +11,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from preprocessing import get_dataset, get_loader
+from preprocessing import get_dataset, get_loader, select_augmentation_source
 
 
 class StandardAugmentationTests(unittest.TestCase):
@@ -61,6 +61,45 @@ class StandardAugmentationTests(unittest.TestCase):
         with patch("preprocessing.load_from_disk", return_value={"train": reordered}):
             rebuilt = get_dataset("train", augment=True, seed=0)
         self.assertTrue(torch.equal(first, rebuilt[2]["pixel_values"]))
+
+    def test_smoke_adds_exactly_200_balanced_views_and_retains_all_2000_originals(self):
+        manifest = pd.DataFrame([
+            {"image_id": f"real/{label:03d}/{index:02d}", "label": label,
+             "class_name": f"{label + 1:03d}.Species"}
+            for label in range(200) for index in reversed(range(10))
+        ])
+        real = Dataset.from_dict({"image_id": manifest.image_id.tolist(), "label": manifest.label.tolist(),
+                                  "image": [Image.new("RGB", (16, 16), "red")] * len(manifest)
+                                  }).cast_column("image", ImageFeature())
+        with patch("preprocessing.load_manifest", return_value=manifest), \
+                patch("preprocessing.load_from_disk", return_value={"train": real}):
+            limited = get_dataset("train", augment=True, seed=2, augment_per_class=1)
+            full = get_dataset("train", augment=True, seed=2)
+            self.assertEqual(len(limited), 2200)
+            self.assertEqual(limited.datasets[0].with_format(None)["image_id"], manifest.image_id.tolist())
+            selected = limited.datasets[1].dataset
+            self.assertEqual(selected["label"], list(range(200)))
+            self.assertTrue(all(image_id.endswith("/00") for image_id in selected["image_id"]))
+            for label in (0, 100, 199):
+                # Subsetting changes neither the original view nor this image's fixed augmentation.
+                original_index = 10 * label + 9
+                self.assertTrue(torch.equal(limited[original_index]["pixel_values"],
+                                            full[original_index]["pixel_values"]))
+                self.assertTrue(torch.equal(limited[2000 + label]["pixel_values"],
+                                            full[2000 + original_index]["pixel_values"]))
+            reversed_real = real.select(list(reversed(range(len(real)))))
+            self.assertEqual(select_augmentation_source(reversed_real, 1)["image_id"], selected["image_id"])
+
+    def test_invalid_or_nonstandard_augmentation_limits_are_rejected(self):
+        for limit in (0, -1, 2):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                select_augmentation_source(self.real, limit)
+        for arguments in ({"split": "val", "augment_per_class": 1},
+                          {"split": "train", "augment_per_class": 1},
+                          {"split": "train", "augment": True, "augment_per_class": 1,
+                           "synthetic_manifest": "synthetic.csv"}):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                get_dataset(**arguments)
 
     def test_full_image_control_retains_only_originals_and_preserves_edges(self):
         control = get_dataset("train", full_image=True)

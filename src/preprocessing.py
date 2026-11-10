@@ -106,23 +106,49 @@ class FixedAugmentedImages(Dataset):
         return {"pixel_values": pixels, "label": label, "image_id": image_id}
 
 
+def select_augmentation_source(dataset, per_class=None):
+    """Select a configured number of real photos per species, ordered by image ID.
+
+    Originals are retained separately. Selection does not use or change any random state.
+    None keeps the full source for the existing full-augmentation experiments.
+    """
+    if per_class is None:
+        return dataset
+    if per_class <= 0:
+        raise ValueError("augment_per_class must be positive")
+    by_label = {}
+    for index, (label, image_id) in enumerate(zip(dataset["label"], dataset["image_id"])):
+        by_label.setdefault(int(label), []).append((image_id, index))
+    if any(len(rows) < per_class for rows in by_label.values()):
+        raise ValueError("augment_per_class exceeds the available real images of a species")
+    indices = [index for label in sorted(by_label)
+               for _, index in sorted(by_label[label])[:per_class]]
+    return dataset.select(indices)
+
+
 def get_dataset(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False,
-                synthetic_manifest=None, full_image=False):
+                synthetic_manifest=None, full_image=False, augment_per_class=None):
     """Return the images of a manifest, transformed, in manifest order.
 
     split: "train", "val" or "test".
     k_shot: for train only, the subset with k images per class drawn with `seed`
         (None keeps the whole train pool). Subsets are nested: 5-shot is inside 10-shot.
     augment: concatenate original center-cropped views with one fixed crop/flip view of each
-        training image, doubling the number of training entries (train only).
+        training image by default (train only).
+    augment_per_class: standard augmentation only; add views of this many real photos per
+        species instead of augmenting every photo. All original real photos are retained.
     synthetic_manifest: prepared CSV to append to real training images (train only).
         Both sources use the baseline resize/center-crop transform. With augment, synthetic
         images also get one fixed crop/flip view, as real ones do (diffusion augmentation arm).
         Entry order: real, synthetic, augmented real, augmented synthetic.
     full_image: real-only control using full-image resizing instead of center cropping (train only).
     """
-    if split != "train" and (k_shot is not None or augment or synthetic_manifest is not None or full_image):
-        raise ValueError("k_shot, augment, synthetic_manifest and full_image apply to the train split only")
+    if split != "train" and (k_shot is not None or augment or synthetic_manifest is not None
+                             or full_image or augment_per_class is not None):
+        raise ValueError("k_shot, augment, synthetic_manifest, full_image and augment_per_class "
+                         "apply to the train split only")
+    if augment_per_class is not None and (not augment or synthetic_manifest is not None):
+        raise ValueError("augment_per_class requires standard augmentation of real images only")
     if full_image and (augment or synthetic_manifest is not None):
         raise ValueError("full_image selects the real-only control; do not combine it with added images")
 
@@ -134,7 +160,9 @@ def get_dataset(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False,
 
     transform = full_image_transform() if full_image else eval_transform()
     parts = [ds.with_transform(ApplyTransform(transform))]
-    augmented = [FixedAugmentedImages(ds, seed)] if augment else []
+    augmented = []
+    if augment:
+        augmented.append(FixedAugmentedImages(select_augmentation_source(ds, augment_per_class), seed))
     if synthetic_manifest is not None:
         names = manifest[["label", "class_name"]].drop_duplicates().sort_values("label")
         synthetic = load_synthetic_manifest(synthetic_manifest, names["class_name"].tolist())
@@ -149,7 +177,7 @@ def get_dataset(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False,
 
 
 def get_loader(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False, batch_size=64, num_workers=2,
-               synthetic_manifest=None, full_image=False):
+               synthetic_manifest=None, full_image=False, augment_per_class=None):
     """DataLoader over `get_dataset(...)`; batches are {"pixel_values": (B, 3, 224, 224), "label": (B,),
     "image_id": list of B str}.
 
@@ -161,7 +189,7 @@ def get_loader(split, k_shot=None, seed=SUBSET_SEEDS[0], augment=False, batch_si
     """
     shuffle = split == "train"
     return DataLoader(
-        get_dataset(split, k_shot, seed, augment, synthetic_manifest, full_image),
+        get_dataset(split, k_shot, seed, augment, synthetic_manifest, full_image, augment_per_class),
         batch_size=batch_size,
         shuffle=shuffle,
         generator=torch.Generator().manual_seed(seed) if shuffle else None,

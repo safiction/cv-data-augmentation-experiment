@@ -11,6 +11,7 @@ import torch
 import torchvision
 import sklearn
 from torch import nn
+from tqdm.auto import tqdm
 
 from classifier import (
     BirdClassifier, class_names_from_manifest, evaluate, load_checkpoint,
@@ -33,6 +34,8 @@ def parse_args(argv=None):
     parser.add_argument("--augment", action="store_true",
                         help="Append one fixed crop/flip version per training image (double dataset size); "
                              "with --synthetic-manifest this is the diffusion augmentation arm")
+    parser.add_argument("--augment-per-class", type=int,
+                        help="With --augment: add fixed views of only N real photos per species")
     parser.add_argument("--synthetic-manifest", type=Path,
                         help="Prepared synthetic CSV to append to real training images")
     parser.add_argument("--full-image", action="store_true",
@@ -50,6 +53,11 @@ def parse_args(argv=None):
     args = parser.parse_args(argv)
     if args.full_image and (args.augment or args.synthetic_manifest is not None):
         parser.error("--full-image selects the real-only control; omit --augment and --synthetic-manifest")
+    if args.augment_per_class is not None:
+        if not args.augment or args.synthetic_manifest is not None:
+            parser.error("--augment-per-class requires --augment without --synthetic-manifest")
+        if args.augment_per_class <= 0 or (args.k_shot is not None and args.augment_per_class > args.k_shot):
+            parser.error("--augment-per-class must be positive and cannot exceed --k-shot")
     for name in ("max_steps", "eval_every", "log_every", "batch_size"):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
@@ -62,7 +70,7 @@ def parse_args(argv=None):
     return args
 
 
-def train_loop(model, train_loader, val_loader, config, output, device):
+def train_loop(model, train_loader, val_loader, config, output, device, on_validation=None):
     """Use a fixed optimizer-step budget and select the best validation macro F1."""
     if not len(train_loader):
         raise ValueError("Cannot train on an empty loader")
@@ -76,7 +84,10 @@ def train_loop(model, train_loader, val_loader, config, output, device):
     if device.type == "cuda":
         torch.cuda.synchronize(device)
     started = time.perf_counter()
-    with (output / "history.csv").open("w", encoding="utf-8", newline="") as stream:
+    with (
+        (output / "history.csv").open("w", encoding="utf-8", newline="") as stream,
+        tqdm(total=config["max_steps"], desc="Training", unit="step", dynamic_ncols=True) as progress,
+    ):
         writer = csv.DictWriter(stream, fieldnames=[
             "step", "train_loss", "val_loss", "val_accuracy", "val_macro_f1"])
         writer.writeheader()
@@ -100,21 +111,22 @@ def train_loop(model, train_loader, val_loader, config, output, device):
             scaler.update()
             running_loss += loss.item() * labels.size(0)
             seen += labels.size(0)
+            progress.update(1)
             if step % config["log_every"] == 0:
-                print(f"Step {step}/{config['max_steps']}: train loss={running_loss / seen:.4f}",
-                      flush=True)
+                progress.set_postfix(train_loss=f"{running_loss / seen:.4f}")
             if step % config["eval_every"] == 0 or step == config["max_steps"]:
-                print(f"Validating at step {step}...", flush=True)
-                metrics, _, _ = evaluate(model, val_loader, device)
+                metrics, _, _ = evaluate(model, val_loader, device,
+                                         progress_desc=f"Validation at step {step}", progress_position=1)
                 if not all(math.isfinite(metrics[key]) for key in ("loss", "accuracy", "macro_f1")):
                     raise RuntimeError("Non-finite validation metric")
-                writer.writerow({
+                record = {
                     "step": step, "train_loss": running_loss / seen,
                     **{f"val_{key}": metrics[key] for key in ("loss", "accuracy", "macro_f1")},
-                })
+                }
+                writer.writerow(record)
                 stream.flush()
-                print(f"Val macro F1={metrics['macro_f1']:.4f}; accuracy={metrics['accuracy']:.4f}",
-                      flush=True)
+                tqdm.write(f"Step {step}: val macro F1={metrics['macro_f1']:.4f}; "
+                           f"accuracy={metrics['accuracy']:.4f}")
                 if metrics["macro_f1"] > best_f1:
                     best_f1, best_step = metrics["macro_f1"], step
                     # The full backbone is saved so evaluation never needs another download.
@@ -122,6 +134,8 @@ def train_loop(model, train_loader, val_loader, config, output, device):
                         "format_version": 1, "model": model.state_dict(), "config": config,
                         "step": step, "val_macro_f1": best_f1,
                     }, output / "best.pt")
+                if on_validation is not None:
+                    on_validation(record.copy())
                 running_loss, seen = 0.0, 0
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -133,7 +147,7 @@ def train_loop(model, train_loader, val_loader, config, output, device):
     }
 
 
-def main(argv=None):
+def main(argv=None, on_validation=None):
     args = parse_args(argv)
     device = resolve_device(args.device)
     if args.amp and device.type != "cuda":
@@ -165,7 +179,8 @@ def main(argv=None):
     train_loader = get_loader(
         "train", k_shot=args.k_shot, seed=args.seed, augment=args.augment,
         batch_size=args.batch_size, num_workers=args.num_workers,
-        synthetic_manifest=args.synthetic_manifest, full_image=args.full_image)
+        synthetic_manifest=args.synthetic_manifest, full_image=args.full_image,
+        augment_per_class=args.augment_per_class)
     val_loader = get_loader("val", batch_size=args.batch_size, num_workers=args.num_workers)
     print(f"Device: {device}; train: {len(train_loader.dataset)}; val: {len(val_loader.dataset)}",
           flush=True)
@@ -178,9 +193,10 @@ def main(argv=None):
         architecture="resnet18", weights="IMAGENET1K_V1", class_names=names,
         frozen_backbone=True, frozen_batchnorm=True, selection_metric="val_macro_f1",
         train_images=len(train_loader.dataset), real_train_images=len(train_manifest),
-        augmented_train_images=(len(train_manifest) + (0 if synthetic is None else len(synthetic))
-                                if args.augment else 0),
-        augmentation_policy="one_fixed_view_per_training_image" if args.augment else None,
+        augmented_train_images=len(train_loader.dataset) - len(train_manifest)
+                               - (0 if synthetic is None else len(synthetic)),
+        augmentation_policy=("one_fixed_view_per_selected_real_image" if args.augment_per_class is not None
+                             else "one_fixed_view_per_training_image" if args.augment else None),
         synthetic_train_images=0 if synthetic is None else len(synthetic),
         train_preprocessing=("full_image_resize_224" if args.full_image else
                              "center_crop_originals_plus_fixed_crop_flip" if args.augment else
@@ -206,9 +222,11 @@ def main(argv=None):
                         for path in sources}
     output.mkdir(parents=True, exist_ok=False)
     save_json(output / "config.json", config)
-    runtime = train_loop(model, train_loader, val_loader, config, output, device)
+    runtime = train_loop(model, train_loader, val_loader, config, output, device,
+                         on_validation=on_validation)
     model, _ = load_checkpoint(output / "best.pt", device)
-    save_evaluation(output, "val", val_manifest, names, evaluate(model, val_loader, device))
+    save_evaluation(output, "val", val_manifest, names,
+                    evaluate(model, val_loader, device, progress_desc="Final validation"))
     save_json(output / "runtime.json", runtime)
     print(f"Best step: {runtime['best_step']}. Results: {output}", flush=True)
 

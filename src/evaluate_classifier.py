@@ -53,7 +53,7 @@ def main(argv=None):
         raise ValueError("Checkpoint does not contain a validation-manifest hash")
     loader = get_loader(args.split, batch_size=args.batch_size, num_workers=args.num_workers)
     print(f"Evaluating {args.split}: {len(loader.dataset)} images on {device}", flush=True)
-    result = evaluate(model, loader, device)
+    result = evaluate(model, loader, device, progress_desc=f"Predicting {args.split}")
     args.output.mkdir(parents=True, exist_ok=False)
     save_evaluation(args.output, args.split, manifest, names, result)
     save_json(args.output / "evaluation_config.json", {

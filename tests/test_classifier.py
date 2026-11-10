@@ -67,10 +67,12 @@ class ClassifierTests(unittest.TestCase):
                   "max_steps": 2, "eval_every": 1, "log_every": 1,
                   "class_names": [f"species_{i}" for i in range(200)]}
         metrics = [{"loss": 2.0, "accuracy": 0.5, "macro_f1": score} for score in (0.6, 0.4)]
+        live_records = []
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             output = Path(directory)
             with patch("train_classifier.evaluate", side_effect=[(m, [], []) for m in metrics]):
-                runtime = train_loop(model, loader, loader, config, output, torch.device("cpu"))
+                runtime = train_loop(model, loader, loader, config, output, torch.device("cpu"),
+                                     on_validation=live_records.append)
             self.assertEqual(runtime["best_step"], 1)
             # Any attempt to download pretrained weights during reload fails this test.
             from torchvision.models import resnet18 as original_resnet18
@@ -88,6 +90,11 @@ class ClassifierTests(unittest.TestCase):
                 self.assertTrue(torch.equal(expected, again(rows[0]["pixel_values"].unsqueeze(0))))
             history = pd.read_csv(output / "history.csv")
             self.assertEqual(history["step"].tolist(), [1, 2])
+            self.assertEqual([row["step"] for row in live_records], [1, 2])
+            self.assertEqual([row["val_macro_f1"] for row in live_records], [0.6, 0.4])
+            for row, saved in zip(live_records, history.to_dict("records")):
+                for key in saved:
+                    self.assertAlmostEqual(row[key], saved[key])
 
     def test_export_preserves_ids_and_rejects_misaligned_rows(self):
         manifest = pd.DataFrame({"image_id": ["a", "b"], "label": [0, 1],
@@ -104,6 +111,16 @@ class ClassifierTests(unittest.TestCase):
 
     def test_nonfinite_hyperparameters_are_rejected(self):
         for arguments in (["--lr", "nan"], ["--weight-decay", "inf"], ["--max-steps", "0"]):
+            with self.subTest(arguments=arguments), self.assertRaises(SystemExit):
+                parse_args(arguments)
+
+    def test_standard_augmentation_limit_requires_a_valid_real_only_augmentation_arm(self):
+        self.assertIsNone(parse_args(["--augment"]).augment_per_class)
+        self.assertEqual(parse_args(["--augment", "--augment-per-class", "1"]).augment_per_class, 1)
+        for arguments in (["--augment-per-class", "1"],
+                          ["--augment", "--augment-per-class", "0"],
+                          ["--augment", "--augment-per-class", "11"],
+                          ["--augment", "--augment-per-class", "1", "--synthetic-manifest", "pool.csv"]):
             with self.subTest(arguments=arguments), self.assertRaises(SystemExit):
                 parse_args(arguments)
 

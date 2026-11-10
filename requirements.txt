@@ -11,4 +11,5 @@ ipywidgets
 diffusers
 transformers
 accelerate
+tqdm
 pytest

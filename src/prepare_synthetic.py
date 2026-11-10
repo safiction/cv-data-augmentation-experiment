@@ -23,6 +23,7 @@ from datasets import Image as ImageFeature, load_from_disk
 from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision.models import ResNet18_Weights, resnet18
+from tqdm.auto import tqdm
 
 from classifier import class_names_from_manifest, resolve_device, save_json
 from leakage import DUP_MIN_SIM, duplicate_pairs
@@ -45,7 +46,8 @@ def read_pool(pool, class_names, expected_per_class=10):
     if metadata[list(required)].isna().any().any() or metadata.image_id.duplicated().any():
         raise ValueError("Metadata contains missing values or repeated image IDs")
     records = []
-    for row in metadata.itertuples(index=False):
+    for row in tqdm(metadata.itertuples(index=False), total=len(metadata),
+                    desc="Checking synthetic files", unit="image", dynamic_ncols=True):
         if row.label not in range(len(class_names)) or class_names[int(row.label)] != row.class_name:
             raise ValueError(f"Metadata label/species mismatch: {row.image_id}")
         # Generator IDs are data-relative paths without the .jpg suffix.
@@ -96,9 +98,9 @@ def take_per_class(manifest, per_class, class_names):
 
 
 @torch.no_grad()
-def features(model, loader, device):
+def features(model, loader, device, progress_desc="Extracting leakage features"):
     rows = []
-    for batch in loader:
+    for batch in tqdm(loader, desc=progress_desc, unit="batch", dynamic_ncols=True):
         pixels = batch["pixel_values"].to(device)
         rows.append(torch.nn.functional.normalize(model(pixels), dim=1).cpu().numpy())
     return np.concatenate(rows)
@@ -135,7 +137,7 @@ def main(argv=None):
     model.fc = torch.nn.Identity()
     model.eval()
     loader = DataLoader(SyntheticImages(manifest, eval_transform()), batch_size=args.batch_size)
-    synthetic_features = features(model, loader, device)
+    synthetic_features = features(model, loader, device, progress_desc="Synthetic leakage features")
     dataset = load_from_disk(PROCESSED_DATA_DIR)
     excluded, matches = set(), {}
     for split in ("val", "test"):
@@ -144,11 +146,12 @@ def main(argv=None):
         raw = dataset[split].cast_column("image", ImageFeature(decode=False))
         raw_by_id = dict(zip(raw["image_id"], raw["image"]))
         hashes = []
-        for image_id in holdout.image_id:
+        for image_id in tqdm(holdout.image_id, desc=f"Hashing real {split}", unit="image", dynamic_ncols=True):
             image = raw_by_id[image_id]
             content = image["bytes"] if image["bytes"] is not None else Path(image["path"]).read_bytes()
             hashes.append(hashlib.md5(content).hexdigest())
-        heldout_features = features(model, get_loader(split, batch_size=args.batch_size, num_workers=0), device)
+        heldout_features = features(model, get_loader(split, batch_size=args.batch_size, num_workers=0),
+                                    device, progress_desc=f"Real {split} leakage features")
         pairs = duplicate_pairs(manifest.md5.tolist(), synthetic_features, manifest.label.tolist(),
                                 hashes, heldout_features, None)
         matches[split] = [{"synthetic_id": manifest.iloc[i].image_id,
